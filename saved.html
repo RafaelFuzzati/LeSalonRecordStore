@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Saved Snapshots</title>
+  <title>Toutes les ventes</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -77,7 +77,7 @@
 </head>
 <body>
   <a href="index.html" class="back-link">&larr; Back to Main Page</a>
-  <h1>Saved Snapshots</h1>
+  <h1>Toutes les ventes</h1>
   <button id="downloadCsv">Download CSV</button>
   <div id="snapshotsContainer"></div>
 
@@ -104,7 +104,7 @@
         const date = new Date(snapshot.time);
         const formattedDate = date.toLocaleString();
 
-        snapshotDiv.innerHTML = `<h2>Snapshot ${index + 1} - ${formattedDate}</h2>`;
+        snapshotDiv.innerHTML = `<h2>${formattedDate}</h2>`;
 
         const table = document.createElement('table');
         const thead = document.createElement('thead');
@@ -132,7 +132,7 @@
     function downloadCSV() {
       if (snapshots.length === 0) return;
 
-      let csvContent = 'Snapshot Time,Category,Price per Unit\n';
+      let csvContent = 'Time,Category,Price per Unit\n';
 
       snapshots.forEach(snapshot => {
         const date = new Date(snapshot.time).toLocaleString();
@@ -149,7 +149,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'saved_snapshots.csv';
+      a.download = 'Ventes.csv';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
