@@ -90,5 +90,76 @@
     function renderSnapshots() {
       if (snapshots.length === 0) {
         container.innerHTML = '<p class="no-data">No saved snapshots found.</p>';
-      } else {
-        container.innerHTML =
+        downloadBtn.style.display = 'none';
+        return;
+      }
+
+      downloadBtn.style.display = 'block';
+      container.innerHTML = '';
+
+      snapshots.forEach((snapshot, index) => {
+        const snapshotDiv = document.createElement('div');
+        snapshotDiv.className = 'snapshot';
+
+        const date = new Date(snapshot.time);
+        const formattedDate = date.toLocaleString();
+
+        snapshotDiv.innerHTML = `<h2>Snapshot ${index + 1} - ${formattedDate}</h2>`;
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Category</th>
+            <th>Price per Unit</th>
+          </tr>`;
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        snapshot.entries.forEach(entry => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${entry.category}</td><td>${entry.price}</td>`;
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+
+        snapshotDiv.appendChild(table);
+        container.appendChild(snapshotDiv);
+      });
+    }
+
+    // Function to convert all snapshots to CSV format and download
+    function downloadCSV() {
+      if (snapshots.length === 0) return;
+
+      let csvContent = 'Snapshot Time,Category,Price per Unit\n';
+
+      snapshots.forEach(snapshot => {
+        const date = new Date(snapshot.time).toLocaleString();
+
+        snapshot.entries.forEach(entry => {
+          // Escape commas if needed
+          const category = `"${entry.category}"`;
+          const price = entry.price;
+          csvContent += `${date},${category},${price}\n`;
+        });
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'saved_snapshots.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    downloadBtn.addEventListener('click', downloadCSV);
+
+    renderSnapshots();
+  </script>
+</body>
+</html>
