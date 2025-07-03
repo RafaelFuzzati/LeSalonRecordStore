@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Saved Snapshots</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f9f9f9;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .snapshot {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .snapshot h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      color: #007AFF;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007AFF;
+      color: white;
+    }
+    a.back-link {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #007AFF;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a.back-link:hover {
+      text-decoration: underline;
+    }
+    .no-data {
+      text-align: center;
+      margin-top: 50px;
+      color: #666;
+    }
+    button#downloadCsv {
+      background-color: #007AFF;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+    button#downloadCsv:hover {
+      background-color: #005bb5;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">&larr; Back to Main Page</a>
+  <h1>Saved Snapshots</h1>
+  <button id="downloadCsv">Download CSV</button>
+  <div id="snapshotsContainer"></div>
+
+  <script>
+    const container = document.getElementById('snapshotsContainer');
+    const downloadBtn = document.getElementById('downloadCsv');
+
+    const snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
+
+    function renderSnapshots() {
+      if (snapshots.length === 0) {
+        container.innerHTML = '<p class="no-data">No saved snapshots found.</p>';
+      } else {
+        container.innerHTML =
