@@ -212,11 +212,10 @@
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
+      // If share is supported (e.g. iPad)
       if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
         const file = new File([blob], filename, { type: 'text/csv' });
         navigator.share({
-          title: 'Export Ventes',
-          text: 'Voici votre fichier CSV des ventes.',
           files: [file]
         }).catch(err => {
           console.warn('Partage annulé ou non supporté :', err);
@@ -226,7 +225,6 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
-        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -235,7 +233,6 @@
     }
 
     downloadBtn.addEventListener('click', () => downloadCSV(generateFilename()));
-
     renderSnapshots();
   </script>
 </body>
