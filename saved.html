@@ -26,6 +26,18 @@
       font-size: 1.1rem;
       color: #007AFF;
     }
+    .total-per-snapshot {
+      font-weight: bold;
+      text-align: right;
+      margin-top: 10px;
+    }
+    .total-global {
+      font-size: 1.2rem;
+      color: white;
+      text-align: center;
+      margin-top: 30px;
+      font-weight: bold;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -53,10 +65,9 @@
     .no-data {
       text-align: center;
       margin-top: 50px;
-      color: #666;
+      color: #ccc;
     }
-    button#downloadCsv,
-    button#clearAll {
+    button#downloadCsv {
       background-color: #007AFF;
       border: none;
       color: white;
@@ -72,15 +83,8 @@
       transition: background-color 0.3s ease;
       width: 180px;
     }
-    button#downloadCsv:hover,
-    button#clearAll:hover {
+    button#downloadCsv:hover {
       background-color: #005bb5;
-    }
-    #buttonsContainer {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 25px;
     }
   </style>
 </head>
@@ -88,17 +92,15 @@
   <a href="index.html" class="back-link">&larr; Back to Main Page</a>
   <h1>Toutes les ventes</h1>
 
-  <div id="buttonsContainer">
-    <button id="downloadCsv">Download CSV</button>
-    <button id="clearAll">Clear All Saved Records</button>
-  </div>
+  <button id="downloadCsv">Download CSV</button>
 
   <div id="snapshotsContainer"></div>
+  <div id="totalGlobal" class="total-global"></div>
 
   <script>
     const container = document.getElementById('snapshotsContainer');
     const downloadBtn = document.getElementById('downloadCsv');
-    const clearBtn = document.getElementById('clearAll');
+    const totalGlobalDiv = document.getElementById('totalGlobal');
 
     let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
 
@@ -106,13 +108,14 @@
       if (snapshots.length === 0) {
         container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
         downloadBtn.style.display = 'none';
-        clearBtn.style.display = 'none';
+        totalGlobalDiv.textContent = '';
         return;
       }
 
       downloadBtn.style.display = 'block';
-      clearBtn.style.display = 'block';
       container.innerHTML = '';
+
+      let grandTotal = 0;
 
       snapshots.forEach((snapshot, index) => {
         const snapshotDiv = document.createElement('div');
@@ -133,19 +136,33 @@
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
+        let subtotal = 0;
+
         snapshot.entries.forEach(entry => {
+          const price = parseFloat(entry.price) || 0;
+          subtotal += price;
+
           const row = document.createElement('tr');
-          row.innerHTML = `<td>${entry.category}</td><td>${entry.price}</td>`;
+          row.innerHTML = `<td>${entry.category}</td><td>${price.toFixed(2)}</td>`;
           tbody.appendChild(row);
         });
-        table.appendChild(tbody);
 
+        grandTotal += subtotal;
+
+        table.appendChild(tbody);
         snapshotDiv.appendChild(table);
+
+        const totalEl = document.createElement('div');
+        totalEl.className = 'total-per-snapshot';
+        totalEl.textContent = `Total: €${subtotal.toFixed(2)}`;
+        snapshotDiv.appendChild(totalEl);
+
         container.appendChild(snapshotDiv);
       });
+
+      totalGlobalDiv.textContent = `Total général de toutes les ventes : €${grandTotal.toFixed(2)}`;
     }
 
-    // Convert all snapshots to CSV format and download
     function downloadCSV(filename = 'Ventes.csv') {
       if (snapshots.length === 0) return;
 
@@ -172,31 +189,6 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-
-    // Generate filename with current date/time like vente_YYYYMMDD_HHMMSS.csv
-    function generateFilename() {
-      const now = new Date();
-      const pad = n => n.toString().padStart(2, '0');
-      const y = now.getFullYear();
-      const m = pad(now.getMonth() + 1);
-      const d = pad(now.getDate());
-      const hh = pad(now.getHours());
-      const mm = pad(now.getMinutes());
-      const ss = pad(now.getSeconds());
-      return `vente_${y}${m}${d}_${hh}${mm}${ss}.csv`;
-    }
-
-    clearBtn.addEventListener('click', () => {
-      if (!confirm('Are you sure you want to clear ALL saved records? This will also download a CSV backup.')) return;
-
-      // Download CSV backup before clearing
-      downloadCSV(generateFilename());
-
-      // Clear saved snapshots
-      snapshots = [];
-      localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
-      renderSnapshots();
-    });
 
     downloadBtn.addEventListener('click', () => downloadCSV());
 
