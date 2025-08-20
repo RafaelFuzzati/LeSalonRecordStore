@@ -63,7 +63,6 @@
       box-sizing: border-box;
     }
 
-    /* New button below table */
     #addRowBtn {
       margin-top: 10px;
       padding: 10px;
@@ -152,6 +151,7 @@
         <thead>
           <tr>
             <th>Category</th>
+            <th>Style</th>
             <th>Price per Unit</th>
           </tr>
         </thead>
@@ -160,7 +160,6 @@
         </tbody>
       </table>
 
-      <!-- Add row button below the table -->
       <button id="addRowBtn">Add More Rows</button>
     </div>
 
@@ -176,6 +175,7 @@
 
   <script>
     const categories = ['Neuf', 'Occasion', 'Bar', 'Autres'];
+    const styles = ['Electronic', 'Jazz', 'African', 'Reggae', 'Rock', 'Hiphop', 'Autre'];
     const maxRows = 20;
 
     const tableBody = document.getElementById('tableBody');
@@ -183,21 +183,18 @@
     const resetBtn = document.getElementById('resetBtn');
     const addRowBtn = document.getElementById('addRowBtn');
 
-    // Create a single row
     function createRow() {
       const row = document.createElement('tr');
 
-      // Category dropdown cell
+      // Category cell
       const categoryCell = document.createElement('td');
       const categorySelect = document.createElement('select');
-
       const emptyOptionCat = document.createElement('option');
       emptyOptionCat.value = "";
       emptyOptionCat.textContent = "-- select --";
       emptyOptionCat.selected = true;
       emptyOptionCat.disabled = true;
       categorySelect.appendChild(emptyOptionCat);
-
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -207,17 +204,33 @@
       categoryCell.appendChild(categorySelect);
       row.appendChild(categoryCell);
 
-      // Price dropdown cell
+      // Style cell
+      const styleCell = document.createElement('td');
+      const styleSelect = document.createElement('select');
+      const emptyOptionStyle = document.createElement('option');
+      emptyOptionStyle.value = "";
+      emptyOptionStyle.textContent = "-- select --";
+      emptyOptionStyle.selected = true;
+      emptyOptionStyle.disabled = true;
+      styleSelect.appendChild(emptyOptionStyle);
+      styles.forEach(st => {
+        const option = document.createElement('option');
+        option.value = st;
+        option.textContent = st;
+        styleSelect.appendChild(option);
+      });
+      styleCell.appendChild(styleSelect);
+      row.appendChild(styleCell);
+
+      // Price cell
       const priceCell = document.createElement('td');
       const priceSelect = document.createElement('select');
-
       const emptyOptionPrice = document.createElement('option');
       emptyOptionPrice.value = "";
       emptyOptionPrice.textContent = "-- select --";
       emptyOptionPrice.selected = true;
       emptyOptionPrice.disabled = true;
       priceSelect.appendChild(emptyOptionPrice);
-
       for (let price = 1; price <= 200; price++) {
         const option = document.createElement('option');
         option.value = price;
@@ -227,13 +240,13 @@
       priceCell.appendChild(priceSelect);
       row.appendChild(priceCell);
 
-      // Add listener for total update
+      // Listener to update total
       priceSelect.addEventListener('change', updateTotal);
 
       return row;
     }
 
-    // Initially generate maxRows rows
+    // Generate initial rows
     for (let i = 0; i < maxRows; i++) {
       tableBody.appendChild(createRow());
     }
@@ -242,10 +255,9 @@
       let total = 0;
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
-        const priceSelect = row.cells[1].querySelector('select');
-        const val = priceSelect.value;
-        if (val) {
-          total += Number(val);
+        const priceSelect = row.cells[2].querySelector('select'); // 3rd column
+        if (priceSelect && priceSelect.value) {
+          total += Number(priceSelect.value);
         }
       });
       totalPriceSpan.textContent = total;
@@ -253,51 +265,39 @@
 
     resetBtn.addEventListener('click', () => {
       saveSnapshot();
-
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
-        const categorySelect = row.cells[0].querySelector('select');
-        const priceSelect = row.cells[1].querySelector('select');
-        categorySelect.selectedIndex = 0;
-        priceSelect.selectedIndex = 0;
+        row.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
       });
       updateTotal();
     });
 
-    // Save current full rows + timestamp to localStorage
     function saveSnapshot() {
       const rows = tableBody.querySelectorAll('tr');
       let snapshot = {
         time: new Date().toISOString(),
         entries: []
       };
-
       rows.forEach(row => {
         const categorySelect = row.cells[0].querySelector('select');
-        const priceSelect = row.cells[1].querySelector('select');
-
-        if (categorySelect.value && priceSelect.value) {
+        const styleSelect = row.cells[1].querySelector('select');
+        const priceSelect = row.cells[2].querySelector('select');
+        if (categorySelect.value && styleSelect.value && priceSelect.value) {
           snapshot.entries.push({
             category: categorySelect.value,
+            style: styleSelect.value,
             price: Number(priceSelect.value)
           });
         }
       });
-
-      if (snapshot.entries.length === 0) {
-        return; // nothing to save
-      }
-
-      // Get existing snapshots from localStorage
+      if (snapshot.entries.length === 0) return;
       let savedSnapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
       savedSnapshots.push(snapshot);
       localStorage.setItem('savedSnapshots', JSON.stringify(savedSnapshots));
     }
 
-    // Add new rows on button click
     addRowBtn.addEventListener('click', () => {
-      // Let's add 10 rows at a time
-      for(let i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i++) {
         tableBody.appendChild(createRow());
       }
     });
