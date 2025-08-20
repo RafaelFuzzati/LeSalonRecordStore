@@ -146,6 +146,7 @@
         thead.innerHTML = `
           <tr>
             <th>Category</th>
+            <th>Style</th>
             <th>Price per Unit</th>
           </tr>`;
         table.appendChild(thead);
@@ -158,12 +159,11 @@
           subtotal += price;
 
           const row = document.createElement('tr');
-          row.innerHTML = `<td>${entry.category}</td><td>${price.toFixed(2)}</td>`;
+          row.innerHTML = `<td>${entry.category}</td><td>${entry.style || ''}</td><td>${price.toFixed(2)}</td>`;
           tbody.appendChild(row);
         });
 
         grandTotal += subtotal;
-
         table.appendChild(tbody);
         snapshotDiv.appendChild(table);
 
@@ -201,15 +201,16 @@
     function downloadCSV(filename = 'Ventes.csv') {
       if (snapshots.length === 0) return;
 
-      let csvContent = 'Time,Category,Price per Unit\n';
+      let csvContent = 'Time,Category,Style,Price per Unit\n';
 
       snapshots.forEach(snapshot => {
         const date = new Date(snapshot.time).toLocaleString();
 
         snapshot.entries.forEach(entry => {
           const category = `"${entry.category}"`;
+          const style = `"${entry.style || ''}"`;
           const price = entry.price;
-          csvContent += `${date},${category},${price}\n`;
+          csvContent += `${date},${category},${style},${price}\n`;
         });
       });
 
