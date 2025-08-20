@@ -96,21 +96,13 @@
     button#downloadCsv:hover {
       background-color: #005bb5;
     }
-    #monthSelector {
-      display: block;
-      margin: 20px auto;
-      padding: 8px;
-      font-size: 16px;
-      border-radius: 6px;
-    }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-link">&larr; Back to Main Page</a>
-  <h1>Toutes les ventes</h1>
+  <a href="index.html" class="back-link">&larr; Retour à l'accueil</a> |
+  <a href="stats.html" class="back-link">📊 Voir Statistiques</a>
 
-  <!-- Month selector -->
-  <select id="monthSelector"></select>
+  <h1>Toutes les ventes</h1>
 
   <button id="downloadCsv">Download CSV</button>
 
@@ -121,36 +113,10 @@
     const container = document.getElementById('snapshotsContainer');
     const downloadBtn = document.getElementById('downloadCsv');
     const totalGlobalDiv = document.getElementById('totalGlobal');
-    const monthSelector = document.getElementById('monthSelector');
 
     let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
 
-    // Sort from newest to oldest
-    snapshots.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-    // Fill month selector with available months
-    function populateMonthSelector() {
-      const months = new Set();
-      snapshots.forEach(s => {
-        const d = new Date(s.time);
-        const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}`;
-        months.add(key);
-      });
-
-      const sortedMonths = Array.from(months).sort((a,b) => b.localeCompare(a));
-
-      monthSelector.innerHTML = '<option value="">-- Choisir un mois --</option>';
-      sortedMonths.forEach(m => {
-        const d = new Date(m + "-01T00:00:00");
-        const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = label;
-        monthSelector.appendChild(opt);
-      });
-    }
-
-    function renderSnapshots(filterMonth = "") {
+    function renderSnapshots() {
       if (snapshots.length === 0) {
         container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
         downloadBtn.style.display = 'none';
@@ -163,19 +129,16 @@
 
       let grandTotal = 0;
 
-      snapshots.forEach((snapshot, index) => {
-        const d = new Date(snapshot.time);
-        const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}`;
-        if (filterMonth && monthKey !== filterMonth) return;
-
+      snapshots.slice().reverse().forEach((snapshot, index) => {
         const snapshotDiv = document.createElement('div');
         snapshotDiv.className = 'snapshot';
 
-        const formattedDate = d.toLocaleString();
+        const date = new Date(snapshot.time);
+        const formattedDate = date.toLocaleString();
 
         snapshotDiv.innerHTML = `
           <h2>${formattedDate}</h2>
-          <button class="delete-btn" onclick="deleteSnapshot(${index})">🗑️ Supprimer</button>
+          <button class="delete-btn" onclick="deleteSnapshot(${snapshots.length - 1 - index})">🗑️ Supprimer</button>
         `;
 
         const table = document.createElement('table');
@@ -183,7 +146,6 @@
         thead.innerHTML = `
           <tr>
             <th>Category</th>
-            <th>Style</th>
             <th>Price per Unit</th>
           </tr>`;
         table.appendChild(thead);
@@ -196,7 +158,7 @@
           subtotal += price;
 
           const row = document.createElement('tr');
-          row.innerHTML = `<td>${entry.category}</td><td>${entry.style || ''}</td><td>${price.toFixed(2)}</td>`;
+          row.innerHTML = `<td>${entry.category}</td><td>${price.toFixed(2)}</td>`;
           tbody.appendChild(row);
         });
 
@@ -220,48 +182,57 @@
       if (confirm("Supprimer cette vente ?")) {
         snapshots.splice(index, 1);
         localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
-        renderSnapshots(monthSelector.value);
-        populateMonthSelector();
+        renderSnapshots();
       }
     }
 
     function generateFilename() {
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
-      return `vente_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.csv`;
+      const y = now.getFullYear();
+      const m = pad(now.getMonth() + 1);
+      const d = pad(now.getDate());
+      const hh = pad(now.getHours());
+      const mm = pad(now.getMinutes());
+      const ss = pad(now.getSeconds());
+      return `vente_${y}${m}${d}_${hh}${mm}${ss}.csv`;
     }
 
     function downloadCSV(filename = 'Ventes.csv') {
       if (snapshots.length === 0) return;
 
-      let csvContent = 'Time,Category,Style,Price per Unit\n';
+      let csvContent = 'Time,Category,Price per Unit\n';
 
       snapshots.forEach(snapshot => {
         const date = new Date(snapshot.time).toLocaleString();
 
         snapshot.entries.forEach(entry => {
           const category = `"${entry.category}"`;
-          const style = `"${entry.style || ''}"`;
           const price = entry.price;
-          csvContent += `${date},${category},${style},${price}\n`;
+          csvContent += `${date},${category},${price}\n`;
         });
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        const file = new File([blob], filename, { type: 'text/csv' });
+        navigator.share({ files: [file] }).catch(err => {
+          console.warn('Partage annulé ou non supporté :', err);
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     }
 
     downloadBtn.addEventListener('click', () => downloadCSV(generateFilename()));
-    monthSelector.addEventListener('change', () => renderSnapshots(monthSelector.value));
-
-    populateMonthSelector();
     renderSnapshots();
   </script>
 </body>
