@@ -1,63 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Accueil - Ventes</title>
+  <title>Nouvelle Vente</title>
   <style>
     body {
-      margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #2F4F2F;
-      color: white;
-      display: flex;
-      height: 100vh;
-    }
-    .sidebar {
-      width: 220px;
-      background: #1e3521;
+      margin: 0;
       padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .sidebar h2 {
-      margin: 0 0 20px 0;
-      font-size: 1.2rem;
-      color: #fff;
-    }
-    .sidebar-btn {
-      display: block;
-      padding: 12px;
-      border-radius: 8px;
-      text-decoration: none;
-      color: white;
-      background: #007AFF;
-      text-align: center;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-    .sidebar-btn:hover {
-      background: #005bb5;
-    }
-    .content {
-      flex: 1;
-      padding: 40px;
+      background: #2F4F2F;
+      color: black;
     }
     h1 {
       text-align: center;
+      color: pink;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #2F4F2F;
+      color: black;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #007AFF;
+      color: white;
+    }
+    select, input {
+      width: 100%;
+      padding: 6px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #007AFF;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #005bb5;
+    }
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .secondary-btn {
+      background-color: #555;
+    }
+    .secondary-btn:hover {
+      background-color: #333;
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Menu</h2>
-    <a href="index.html" class="sidebar-btn">🏠 Nouvelle Vente</a>
-    <a href="saved.html" class="sidebar-btn">🗂️ Toutes les ventes</a>
-    <a href="stats.html" class="sidebar-btn">📊 Statistiques</a>
+  <h1>Nouvelle Vente</h1>
+
+  <table id="salesTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Price per Unit</th>
+      </tr>
+    </thead>
+    <tbody id="salesBody">
+      <!-- 20 rows inserted by script -->
+    </tbody>
+  </table>
+
+  <div style="text-align:center;">
+    <button onclick="addRow()">+ Ajouter une ligne</button>
+    <button onclick="saveSnapshot()">💾 Enregistrer la vente</button>
   </div>
 
-  <div class="content">
-    <h1>Bienvenue dans votre gestionnaire de ventes</h1>
-    <p style="text-align:center;">Choisissez une option dans le menu à gauche.</p>
+  <div class="actions">
+    <button onclick="window.location.href='saved.html'">🗂️ Toutes les ventes</button>
+    <button onclick="window.location.href='stats.html'">📊 Statistiques</button>
   </div>
+
+  <script>
+    const categories = ["Vinyle", "CD", "Cassette", "Accessoire"];
+    const prices = ["5", "10", "15", "20", "25"];
+
+    function createRow() {
+      const row = document.createElement("tr");
+
+      const catCell = document.createElement("td");
+      const catSelect = document.createElement("select");
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        catSelect.appendChild(opt);
+      });
+      catCell.appendChild(catSelect);
+
+      const priceCell = document.createElement("td");
+      const priceSelect = document.createElement("select");
+      prices.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p;
+        priceSelect.appendChild(opt);
+      });
+      priceCell.appendChild(priceSelect);
+
+      row.appendChild(catCell);
+      row.appendChild(priceCell);
+
+      return row;
+    }
+
+    function addRow() {
+      document.getElementById("salesBody").appendChild(createRow());
+    }
+
+    function saveSnapshot() {
+      const rows = document.querySelectorAll("#salesBody tr");
+      const entries = [];
+      rows.forEach(row => {
+        const category = row.querySelector("select:nth-child(1)").value;
+        const price = row.querySelector("select:nth-child(2)").value;
+        if (category && price) {
+          entries.push({ category, price });
+        }
+      });
+
+      if (entries.length === 0) {
+        alert("⚠️ Rien à enregistrer !");
+        return;
+      }
+
+      const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
+      snapshots.push({ time: new Date().toISOString(), entries });
+      localStorage.setItem("savedSnapshots", JSON.stringify(snapshots));
+
+      alert("✅ Vente enregistrée !");
+      location.reload();
+    }
+
+    // start with 20 rows
+    for (let i = 0; i < 20; i++) {
+      addRow();
+    }
+  </script>
 </body>
 </html>
