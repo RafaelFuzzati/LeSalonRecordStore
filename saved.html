@@ -96,6 +96,13 @@
     button#downloadCsv:hover {
       background-color: #005bb5;
     }
+    select#monthFilter {
+      display: block;
+      margin: 20px auto;
+      padding: 6px 12px;
+      font-size: 16px;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -103,6 +110,11 @@
   <a href="stats.html" class="back-link">📊 Voir Statistiques</a>
 
   <h1>Toutes les ventes</h1>
+
+  <!-- Month selector -->
+  <select id="monthFilter">
+    <option value="all">Toutes les ventes</option>
+  </select>
 
   <button id="downloadCsv">Download CSV</button>
 
@@ -113,11 +125,40 @@
     const container = document.getElementById('snapshotsContainer');
     const downloadBtn = document.getElementById('downloadCsv');
     const totalGlobalDiv = document.getElementById('totalGlobal');
+    const monthFilter = document.getElementById('monthFilter');
 
     let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
 
+    // Populate month selector
+    function populateMonthSelector() {
+      const monthsSet = new Set();
+      snapshots.forEach(snap => {
+        const d = new Date(snap.time);
+        const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+        monthsSet.add(monthKey);
+      });
+
+      const monthsArray = Array.from(monthsSet).sort((a,b) => b.localeCompare(a)); // descending
+      monthsArray.forEach(monthKey => {
+        const option = document.createElement('option');
+        const [year, month] = monthKey.split('-');
+        option.value = monthKey;
+        option.text = `Ventes de ${month}/${year}`;
+        monthFilter.appendChild(option);
+      });
+    }
+
     function renderSnapshots() {
-      if (snapshots.length === 0) {
+      let filteredSnapshots = snapshots;
+      if (monthFilter.value !== 'all') {
+        filteredSnapshots = snapshots.filter(snap => {
+          const d = new Date(snap.time);
+          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+          return monthKey === monthFilter.value;
+        });
+      }
+
+      if (filteredSnapshots.length === 0) {
         container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
         downloadBtn.style.display = 'none';
         totalGlobalDiv.textContent = '';
@@ -129,7 +170,7 @@
 
       let grandTotal = 0;
 
-      snapshots.slice().reverse().forEach((snapshot, index) => {
+      filteredSnapshots.slice().reverse().forEach((snapshot, index) => {
         const snapshotDiv = document.createElement('div');
         snapshotDiv.className = 'snapshot';
 
@@ -138,7 +179,7 @@
 
         snapshotDiv.innerHTML = `
           <h2>${formattedDate}</h2>
-          <button class="delete-btn" onclick="deleteSnapshot(${snapshots.length - 1 - index})">🗑️ Supprimer</button>
+          <button class="delete-btn" onclick="deleteSnapshot(${snapshots.indexOf(snapshot)})">🗑️ Supprimer</button>
         `;
 
         const table = document.createElement('table');
@@ -182,6 +223,7 @@
       if (confirm("Supprimer cette vente ?")) {
         snapshots.splice(index, 1);
         localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
+        populateMonthSelector();
         renderSnapshots();
       }
     }
@@ -199,13 +241,20 @@
     }
 
     function downloadCSV(filename = 'Ventes.csv') {
-      if (snapshots.length === 0) return;
+      let filteredSnapshots = snapshots;
+      if (monthFilter.value !== 'all') {
+        filteredSnapshots = snapshots.filter(snap => {
+          const d = new Date(snap.time);
+          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+          return monthKey === monthFilter.value;
+        });
+      }
+
+      if (filteredSnapshots.length === 0) return;
 
       let csvContent = 'Time,Category,Style,Price per Unit\n';
-
-      snapshots.forEach(snapshot => {
+      filteredSnapshots.forEach(snapshot => {
         const date = new Date(snapshot.time).toLocaleString();
-
         snapshot.entries.forEach(entry => {
           const category = `"${entry.category}"`;
           const style = `"${entry.style || ''}"`;
@@ -215,7 +264,6 @@
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
       if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
         const file = new File([blob], filename, { type: 'text/csv' });
         navigator.share({ files: [file] }).catch(err => {
@@ -233,7 +281,10 @@
       }
     }
 
+    monthFilter.addEventListener('change', renderSnapshots);
     downloadBtn.addEventListener('click', () => downloadCSV(generateFilename()));
+
+    populateMonthSelector();
     renderSnapshots();
   </script>
 </body>
