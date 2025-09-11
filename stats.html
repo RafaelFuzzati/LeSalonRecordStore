@@ -28,7 +28,7 @@
     canvas {
       display: block;
       width: 100% !important;
-      max-width: 1000px;
+      max-width: 900px;
       height: 450px !important;
       margin: 25px auto;
       background: white;
@@ -135,6 +135,34 @@
       if (categoryChart) categoryChart.destroy();
       if (styleChart) styleChart.destroy();
 
+      const chartOptions = (colorCount, colorValue, labelCount, labelValue) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { font: { size: 15 }, color: '#333' },
+            grid: { drawOnChartArea: false },
+            title: { display: false },
+            minRotation: 0,
+            maxRotation: 0
+          },
+          yCount: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: labelCount, color: colorCount, font: { size: 18, weight: 'bold' } },
+            ticks: { color: colorCount, font: { size: 14 } }
+          },
+          yValue: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: labelValue, color: colorValue, font: { size: 18, weight: 'bold' } },
+            ticks: { color: colorValue, font: { size: 14 } },
+            grid: { drawOnChartArea: false }
+          }
+        },
+        plugins: { legend: { display: false } }
+      });
+
       categoryChart = new Chart(categoryCtx, {
         type: 'bar',
         data: {
@@ -144,39 +172,19 @@
               label: 'Nombre de disques',
               data: Object.values(categoryCounts),
               backgroundColor: '#007AFF',
-              yAxisID: 'yCount'
+              yAxisID: 'yCount',
+              barThickness: 40
             },
             {
               label: 'Valeur (CHF)',
               data: Object.values(categorySums),
               backgroundColor: '#FF9500',
-              yAxisID: 'yValue'
+              yAxisID: 'yValue',
+              barThickness: 40
             }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              ticks: { font: { size: 14 }, color: '#333' }
-            },
-            yCount: {
-              type: 'linear',
-              position: 'left',
-              title: { display: true, text: 'Nombre de disques', color: '#007AFF', font: { size: 18, weight: 'bold' } },
-              ticks: { color: '#007AFF', font: { size: 14 } }
-            },
-            yValue: {
-              type: 'linear',
-              position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500', font: { size: 18, weight: 'bold' } },
-              ticks: { color: '#FF9500', font: { size: 14 } },
-              grid: { drawOnChartArea: false }
-            }
-          },
-          plugins: { legend: { display: false } }
-        }
+        options: chartOptions('#007AFF', '#FF9500', 'Nombre de disques', 'Valeur (CHF)')
       });
 
       styleChart = new Chart(styleCtx, {
@@ -188,39 +196,19 @@
               label: 'Nombre de disques',
               data: Object.values(styleCounts),
               backgroundColor: '#34C759',
-              yAxisID: 'yCount'
+              yAxisID: 'yCount',
+              barThickness: 40
             },
             {
               label: 'Valeur (CHF)',
               data: Object.values(styleSums),
               backgroundColor: '#FF3B30',
-              yAxisID: 'yValue'
+              yAxisID: 'yValue',
+              barThickness: 40
             }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              ticks: { font: { size: 14 }, color: '#333' }
-            },
-            yCount: {
-              type: 'linear',
-              position: 'left',
-              title: { display: true, text: 'Nombre de disques', color: '#34C759', font: { size: 18, weight: 'bold' } },
-              ticks: { color: '#34C759', font: { size: 14 } }
-            },
-            yValue: {
-              type: 'linear',
-              position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30', font: { size: 18, weight: 'bold' } },
-              ticks: { color: '#FF3B30', font: { size: 14 } },
-              grid: { drawOnChartArea: false }
-            }
-          },
-          plugins: { legend: { display: false } }
-        }
+        options: chartOptions('#34C759', '#FF3B30', 'Nombre de disques', 'Valeur (CHF)')
       });
 
       totalMonthDiv.textContent = `Total du mois : ${totalMonthDiscs} disques | ${totalMonthSales.toFixed(2)} CHF`;
