@@ -59,11 +59,12 @@
   <canvas id="styleChart"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   <script>
     const monthSelect = document.getElementById("monthSelect");
     const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
 
-    // Fill month selector
+    // Remplir la liste des mois
     function populateMonths() {
       const months = new Set();
       snapshots.forEach(snap => {
@@ -95,13 +96,14 @@
     function renderCharts(monthKey) {
       const data = filterByMonth(monthKey);
 
-      const categoryCounts = {};
-      const styleCounts = {};
+      const categorySums = {};
+      const styleSums = {};
 
       data.forEach(snap => {
         snap.entries.forEach(entry => {
-          categoryCounts[entry.category] = (categoryCounts[entry.category] || 0) + 1;
-          styleCounts[entry.style] = (styleCounts[entry.style] || 0) + 1;
+          const price = parseFloat(entry.price) || 0;
+          categorySums[entry.category] = (categorySums[entry.category] || 0) + price;
+          styleSums[entry.style] = (styleSums[entry.style] || 0) + price;
         });
       });
 
@@ -114,25 +116,47 @@
       categoryChart = new Chart(categoryCtx, {
         type: 'bar',
         data: {
-          labels: Object.keys(categoryCounts),
+          labels: Object.keys(categorySums),
           datasets: [{
-            label: 'Ventes par catégorie',
-            data: Object.values(categoryCounts),
+            label: 'Ventes (€) par catégorie',
+            data: Object.values(categorySums),
             backgroundColor: '#007AFF'
           }]
-        }
+        },
+        options: {
+          plugins: {
+            datalabels: {
+              color: '#000',
+              anchor: 'end',
+              align: 'top',
+              formatter: (val) => "€" + val.toFixed(2)
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
       });
 
       styleChart = new Chart(styleCtx, {
         type: 'bar',
         data: {
-          labels: Object.keys(styleCounts),
+          labels: Object.keys(styleSums),
           datasets: [{
-            label: 'Ventes par style',
-            data: Object.values(styleCounts),
+            label: 'Ventes (€) par style',
+            data: Object.values(styleSums),
             backgroundColor: '#FF3B30'
           }]
-        }
+        },
+        options: {
+          plugins: {
+            datalabels: {
+              color: '#000',
+              anchor: 'end',
+              align: 'top',
+              formatter: (val) => "€" + val.toFixed(2)
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
       });
     }
 
