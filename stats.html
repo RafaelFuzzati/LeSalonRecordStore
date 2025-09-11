@@ -70,6 +70,7 @@
   <div id="totalMonth" class="total-month"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   <script>
     const monthSelect = document.getElementById("monthSelect");
     const totalMonthDiv = document.getElementById("totalMonth");
@@ -142,7 +143,6 @@
           x: {
             ticks: { font: { size: 15 }, color: '#333' },
             grid: { drawOnChartArea: false },
-            title: { display: false },
             minRotation: 0,
             maxRotation: 0
           },
@@ -160,7 +160,22 @@
             grid: { drawOnChartArea: false }
           }
         },
-        plugins: { legend: { display: false } }
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: 'center',
+            align: 'center',
+            rotation: -90, // vertical dans la barre
+            color: 'white',
+            font: { size: 13, weight: 'bold' },
+            formatter: (val, ctx) => {
+              if (ctx.dataset.label.includes("CHF")) {
+                return val.toFixed(0) + " CHF";
+              }
+              return val;
+            }
+          }
+        }
       });
 
       categoryChart = new Chart(categoryCtx, {
@@ -184,7 +199,8 @@
             }
           ]
         },
-        options: chartOptions('#007AFF', '#FF9500', 'Nombre de disques', 'Valeur (CHF)')
+        options: chartOptions('#007AFF', '#FF9500', 'Nombre de disques', 'Valeur (CHF)'),
+        plugins: [ChartDataLabels]
       });
 
       styleChart = new Chart(styleCtx, {
@@ -208,7 +224,8 @@
             }
           ]
         },
-        options: chartOptions('#34C759', '#FF3B30', 'Nombre de disques', 'Valeur (CHF)')
+        options: chartOptions('#34C759', '#FF3B30', 'Nombre de disques', 'Valeur (CHF)'),
+        plugins: [ChartDataLabels]
       });
 
       totalMonthDiv.textContent = `Total du mois : ${totalMonthDiscs} disques | ${totalMonthSales.toFixed(2)} CHF`;
