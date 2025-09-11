@@ -1,295 +1,104 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>Statistiques des ventes</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{
-      --bg:#2F4F2F; --card:#fff; --ink:#111827; --muted:#6b7280;
-      --bar1:#60a5fa; --bar2:#f97316; --heat0:#0b1220; --heat1:#134e4a; --heat2:#0ea5e9; --heat3:#f59e0b; --heat4:#ef4444;
-    }
-    *{box-sizing:border-box}
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      margin:0; padding:20px; background:var(--bg); color:#fff; min-height:100vh;
-    }
-    a.back-link{color:#f9a8d4; text-decoration:none; font-weight:600}
-    a.back-link:hover{text-decoration:underline}
-    h1{margin:10px 0 16px; text-align:center; color:#f9a8d4}
+<section class="section card">
+  <h3>Ventes ce mois (calendrier)</h3>
+  <div id="calendar" class="calendar"></div>
+  <div class="hint">Chaque case correspond à un jour du mois (Lun → Dim).</div>
+</section>
 
-    .controls{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; margin:20px 0 28px}
-    .controls label{color:#fff}
-    .controls select{
-      padding:10px 12px; border-radius:10px; border:none; font-size:14px; background:#fff; color:#111827; font-weight:600;
-    }
-    .section{margin-bottom:28px;}
-    .card{
-      background:var(--card); color:var(--ink);
-      border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.18);
-    }
-    .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
+<style>
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-head {
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: #e5e7eb;
+    margin-bottom: 4px;
+  }
+  .day {
+    background: #0b1220;
+    color: #fff;
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .day.empty {
+    background: transparent;
+    box-shadow: none;
+  }
+  .dow {
+    font-size: 11px;
+    color: #e5e7eb;
+    font-weight: 600;
+  }
+  .d {
+    font-weight: 900;
+    font-size: 16px;
+  }
+  .v {
+    font-size: 11px;
+    color: #f1f5f9;
+  }
+  .lv0 { background:#0b1220 }
+  .lv1 { background:#134e4a }
+  .lv2 { background:#0ea5e9 }
+  .lv3 { background:#f59e0b }
+  .lv4 { background:#ef4444 }
+</style>
 
-    .grid{display:grid; gap:20px}
-    .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media (max-width:900px){ .kpis,.two-col{grid-template-columns:1fr} }
+<script>
+  const dayNames = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 
-    .kpi-value{font-size:30px; font-weight:900}
-    .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
+  function renderCalendar(sum, mkey){
+    els.calendar.innerHTML = "";
+    const [y,mo] = mkey.split("-").map(Number);
+    const first = new Date(y, mo-1, 1);
+    const last = new Date(y, mo, 0);
 
-    /* Calendar with day names */
-    .calendar{display:grid; grid-template-columns:repeat(7,1fr); gap:10px}
-    .day{
-      background:var(--heat0); color:#fff; border-radius:12px; padding:10px; text-align:center;
-      aspect-ratio:1/1; display:flex; flex-direction:column; justify-content:center; align-items:center;
-      gap:4px; transition:transform .08s ease; cursor:pointer; user-select:none;
-    }
-    .day:hover{transform:translateY(-2px)}
-    .dow{font-size:11px; color:#e5e7eb; font-weight:600}
-    .d{font-weight:900; font-size:18px}
-    .v{font-size:11px; color:#f1f5f9}
-    .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
-    .hint{color:#e5e7eb; font-size:12px; margin-top:8px}
+    // titres colonnes (jours de la semaine)
+    dayNames.forEach(dn=>{
+      const head = document.createElement("div");
+      head.className = "cal-head";
+      head.textContent = dn;
+      els.calendar.appendChild(head);
+    });
 
-    .list{display:flex; flex-direction:column; gap:14px}
-    .row{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center}
-    .row .name{font-weight:800}
-    .row .nums{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
-    .row .nums small{color:var(--muted)}
-    .barwrap{grid-column:1/-1; background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
-    .bar{height:100%; background:linear-gradient(90deg,var(--bar1),var(--bar2))}
-
-    .month-list{display:flex; flex-direction:column; gap:12px}
-    .month-row{display:grid; grid-template-columns:80px 1fr auto; gap:10px; align-items:center}
-    .month-row .label{font-weight:800}
-    .month-barwrap{background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
-    .month-bar{height:100%; background:linear-gradient(90deg,var(--bar2),var(--bar1))}
-  </style>
-</head>
-<body>
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
-    <div class="left-nav">
-      <a href="index.html" class="back-link">&larr; Nouvelle vente</a> |
-      <a href="all.html" class="back-link">🧾 Toutes les ventes</a>
-    </div>
-  </div>
-
-  <h1>Statistiques des ventes</h1>
-
-  <div class="controls">
-    <label for="monthSelect">Sélectionnez un mois :</label>
-    <select id="monthSelect"></select>
-  </div>
-
-  <section class="section grid kpis">
-    <div class="card">
-      <h3>Total CHF</h3>
-      <div class="kpi-value" id="kpiTotal">—</div>
-      <div class="kpi-sub" id="kpiAvgDay">—</div>
-    </div>
-    <div class="card">
-      <h3>Disques vendus</h3>
-      <div class="kpi-value" id="kpiCount">—</div>
-      <div class="kpi-sub" id="kpiAvgTicket">—</div>
-    </div>
-  </section>
-
-  <section class="section card">
-    <h3>Ventes ce mois (par jour)</h3>
-    <div id="calendar" class="calendar"></div>
-    <div class="hint">Seuls les jours avec ventes sont affichés.</div>
-  </section>
-
-  <section class="section grid two-col">
-    <div class="card">
-      <h3>Répartition par catégorie</h3>
-      <div id="catList" class="list"></div>
-    </div>
-    <div class="card">
-      <h3>Répartition par style</h3>
-      <div id="styleList" class="list"></div>
-    </div>
-  </section>
-
-  <section class="section card">
-    <h3>Comparaison par mois</h3>
-    <div id="monthCompare" class="month-list"></div>
-  </section>
-
-  <script>
-    const CHF = n => new Intl.NumberFormat('fr-CH',{style:'currency',currency:'CHF',maximumFractionDigits:2}).format(n);
-    const pad = n => String(n).padStart(2,'0');
-    const dayNames = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
-
-    const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
-    const monthSelect = document.getElementById("monthSelect");
-
-    const els = {
-      kpiTotal: document.getElementById("kpiTotal"),
-      kpiAvgDay: document.getElementById("kpiAvgDay"),
-      kpiCount: document.getElementById("kpiCount"),
-      kpiAvgTicket: document.getElementById("kpiAvgTicket"),
-      calendar: document.getElementById("calendar"),
-      catList: document.getElementById("catList"),
-      styleList: document.getElementById("styleList"),
-      monthCompare: document.getElementById("monthCompare"),
-    };
-
-    function monthKeyFromDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1); }
-    function toDayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
-
-    (function populateMonths(){
-      const set = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
-      const months = Array.from(set).sort().reverse();
-      monthSelect.innerHTML = "";
-      months.forEach(m=>{
-        const [y,mo] = m.split("-");
-        const op = document.createElement("option");
-        op.value = m; op.textContent = `${mo}/${y}`;
-        monthSelect.appendChild(op);
-      });
-    })();
-
-    function filterByMonth(mkey){
-      return snapshots.filter(s=>{
-        const d = new Date(s.time);
-        return monthKeyFromDate(d) === mkey;
-      });
+    // remplissage avec cases vides jusqu'au premier jour
+    let startDay = (first.getDay()+6)%7; // Lundi=0
+    for(let i=0; i<startDay; i++){
+      const empty = document.createElement("div");
+      empty.className="day empty";
+      els.calendar.appendChild(empty);
     }
 
-    function summarizeMonth(data){
-      const byDay = {};
-      const byCatC = {}, byCatS = {};
-      const byStyleC = {}, byStyleS = {};
-      let totalSales=0, totalCount=0;
+    // max valeur pour intensité couleurs
+    const totals = Object.values(sum.byDay).map(d=>d.total);
+    const max = Math.max(1, ...totals);
 
-      data.forEach(s=>{
-        const d = new Date(s.time);
-        const dayKey = toDayKey(d);
-        let sub=0, cnt=0;
-        s.entries.forEach(e=>{
-          const price = parseFloat(e.price)||0;
-          const cat = e.category || "—";
-          const st = e.style || "—";
-          totalSales += price; totalCount++;
-          sub += price; cnt++;
-          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+price;
-          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+price;
-        });
-        if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0, dow:d.getDay() };
-        byDay[dayKey].total+=sub; byDay[dayKey].count+=cnt;
-      });
+    // jours du mois
+    for(let day=1; day<=last.getDate(); day++){
+      const d = new Date(y, mo-1, day);
+      const key = toDayKey(d);
+      const info = sum.byDay[key] || {total:0, count:0};
+      const ratio = info.total/max;
+      const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
 
-      return { totalSales, totalCount, byDay, byCatC, byCatS, byStyleC, byStyleS };
+      const box = document.createElement("div");
+      box.className = `day lv${lv}`;
+      box.title = `${dayNames[(d.getDay()+6)%7]} ${key} • ${info.count} disques — ${CHF(info.total)}`;
+      box.innerHTML = `
+        <div class="d">${day}</div>
+        <div class="v">${info.count} | ${CHF(info.total)}</div>
+      `;
+      els.calendar.appendChild(box);
     }
-
-    function summarizeAllMonths(){
-      const map = {};
-      snapshots.forEach(s=>{
-        const mk = monthKeyFromDate(new Date(s.time));
-        map[mk] = map[mk] || { total:0, count:0 };
-        let sub=0, cnt=0;
-        s.entries.forEach(e=>{ sub += parseFloat(e.price)||0; cnt++; });
-        map[mk].total += sub; map[mk].count += cnt;
-      });
-      return map;
-    }
-
-    function renderKPI(sum){
-      const daysWithSales = Object.values(sum.byDay).filter(d=>d.total>0).length || 1;
-      els.kpiTotal.textContent = CHF(sum.totalSales);
-      els.kpiAvgDay.textContent = `Moyenne par jour (avec ventes): ${CHF(sum.totalSales/daysWithSales)}`;
-      els.kpiCount.textContent = sum.totalCount.toString();
-      els.kpiAvgTicket.textContent = `Ticket moyen: ${sum.totalCount? CHF(sum.totalSales/sum.totalCount): '—'}`;
-    }
-
-    function renderCalendar(sum, mkey){
-      els.calendar.innerHTML = "";
-      const [y,mo] = mkey.split("-").map(Number);
-      const last = new Date(y, mo, 0);
-      const totals = Object.values(sum.byDay).map(d=>d.total);
-      const max = Math.max(1, ...totals, 0);
-
-      for(let day=1; day<=last.getDate(); day++){
-        const d = new Date(y, mo-1, day);
-        const key = toDayKey(d);
-        const info = sum.byDay[key];
-        if(!info || info.total<=0) continue;
-        const ratio = info.total/max;
-        const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
-
-        const box = document.createElement("div");
-        box.className = `day lv${lv}`;
-        box.title = `${dayNames[d.getDay()]} ${key} • ${info.count} disques — ${CHF(info.total)}`;
-        box.innerHTML = `
-          <div class="dow">${dayNames[d.getDay()]}</div>
-          <div class="d">${day}</div>
-          <div class="v">${info.count} | ${CHF(info.total)}</div>
-        `;
-        els.calendar.appendChild(box);
-      }
-    }
-
-    function renderBreakdown(containerList, counts, sums, totalSales){
-      const items = Object.keys(counts).map(k=>({
-        name:k, count:counts[k], sum:sums[k]||0
-      })).sort((a,b)=> b.sum - a.sum);
-
-      containerList.innerHTML = "";
-      const maxSum = Math.max(1, ...items.map(i=>i.sum));
-
-      items.forEach(i=>{
-        const row = document.createElement('div');
-        row.className = 'row';
-        const share = totalSales? (i.sum/totalSales*100):0;
-        row.innerHTML = `
-          <div class="name">${i.name}</div>
-          <div class="nums"><strong>${i.count}</strong> <small>disques</small></div>
-          <div class="nums"><strong>${CHF(i.sum)}</strong> <small>${share.toFixed(1)}%</small></div>
-          <div class="barwrap"><div class="bar" style="width:${(i.sum/maxSum*100).toFixed(0)}%"></div></div>
-        `;
-        containerList.appendChild(row);
-      });
-      if(!items.length){
-        containerList.innerHTML = `<div style="color:var(--muted)">Aucune donnée.</div>`;
-      }
-    }
-
-    function renderMonthComparison(map){
-      const entries = Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
-      const maxT = Math.max(1, ...entries.map(([_,v])=>v.total));
-      els.monthCompare.innerHTML = "";
-      entries.forEach(([mk, v])=>{
-        const [y,mo] = mk.split("-");
-        const row = document.createElement('div');
-        row.className = 'month-row';
-        row.innerHTML = `
-          <div class="label">${mo}/${y}</div>
-          <div class="month-barwrap"><div class="month-bar" style="width:${(v.total/maxT*100).toFixed(0)}%"></div></div>
-          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(v.total)}</strong></div>
-        `;
-        els.monthCompare.appendChild(row);
-      });
-      if(!entries.length){
-        els.monthCompare.innerHTML = `<div style="color:var(--muted)">Aucune donnée.</div>`;
-      }
-    }
-
-    function renderAll(){
-      const mkey = monthSelect.value;
-      const monthData = filterByMonth(mkey);
-      const sum = summarizeMonth(monthData);
-      renderKPI(sum);
-      renderCalendar(sum, mkey);
-      renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalSales);
-      renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalSales);
-      const allMonths = summarizeAllMonths();
-      renderMonthComparison(allMonths);
-    }
-
-    monthSelect.addEventListener('change', renderAll);
-    renderAll();
-  </script>
-</body>
-</html>
+  }
+</script>
