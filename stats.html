@@ -27,7 +27,7 @@
     }
     canvas {
       display: block;
-      max-width: 700px;
+      max-width: 800px;
       margin: 20px auto;
       background: white;
       padding: 20px;
@@ -96,13 +96,19 @@
     function renderCharts(monthKey) {
       const data = filterByMonth(monthKey);
 
+      const categoryCounts = {};
       const categorySums = {};
+      const styleCounts = {};
       const styleSums = {};
 
       data.forEach(snap => {
         snap.entries.forEach(entry => {
           const price = parseFloat(entry.price) || 0;
+
+          categoryCounts[entry.category] = (categoryCounts[entry.category] || 0) + 1;
           categorySums[entry.category] = (categorySums[entry.category] || 0) + price;
+
+          styleCounts[entry.style] = (styleCounts[entry.style] || 0) + 1;
           styleSums[entry.style] = (styleSums[entry.style] || 0) + price;
         });
       });
@@ -116,20 +122,33 @@
       categoryChart = new Chart(categoryCtx, {
         type: 'bar',
         data: {
-          labels: Object.keys(categorySums),
-          datasets: [{
-            label: 'Ventes (€) par catégorie',
-            data: Object.values(categorySums),
-            backgroundColor: '#007AFF'
-          }]
+          labels: Object.keys(categoryCounts),
+          datasets: [
+            {
+              label: 'Nombre de disques',
+              data: Object.values(categoryCounts),
+              backgroundColor: '#007AFF'
+            },
+            {
+              label: 'Valeur (€)',
+              data: Object.values(categorySums),
+              backgroundColor: '#FF9500'
+            }
+          ]
         },
         options: {
+          responsive: true,
           plugins: {
             datalabels: {
               color: '#000',
               anchor: 'end',
               align: 'top',
-              formatter: (val) => "€" + val.toFixed(2)
+              formatter: (val, ctx) => {
+                if (ctx.dataset.label.includes("€")) {
+                  return "€" + val.toFixed(2);
+                }
+                return val;
+              }
             }
           }
         },
@@ -139,20 +158,33 @@
       styleChart = new Chart(styleCtx, {
         type: 'bar',
         data: {
-          labels: Object.keys(styleSums),
-          datasets: [{
-            label: 'Ventes (€) par style',
-            data: Object.values(styleSums),
-            backgroundColor: '#FF3B30'
-          }]
+          labels: Object.keys(styleCounts),
+          datasets: [
+            {
+              label: 'Nombre de disques',
+              data: Object.values(styleCounts),
+              backgroundColor: '#34C759'
+            },
+            {
+              label: 'Valeur (€)',
+              data: Object.values(styleSums),
+              backgroundColor: '#FF3B30'
+            }
+          ]
         },
         options: {
+          responsive: true,
           plugins: {
             datalabels: {
               color: '#000',
               anchor: 'end',
               align: 'top',
-              formatter: (val) => "€" + val.toFixed(2)
+              formatter: (val, ctx) => {
+                if (ctx.dataset.label.includes("€")) {
+                  return "€" + val.toFixed(2);
+                }
+                return val;
+              }
             }
           }
         },
