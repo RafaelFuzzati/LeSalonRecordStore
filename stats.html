@@ -27,9 +27,9 @@
     }
     canvas {
       display: block;
-      width: 95% !important;   /* prend presque toute la largeur */
-      max-width: 1200px;       /* plus large */
-      height: 500px !important;/* plus haut */
+      width: 95% !important;
+      max-width: 1200px;
+      height: 500px !important;
       margin: 30px auto;
       background: white;
       padding: 30px;
@@ -161,20 +161,18 @@
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre', color: '#007AFF' },
-              ticks: { color: '#007AFF' }
+              title: { display: true, text: 'Nombre de disques', color: '#007AFF', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#007AFF', font: { size: 14 } }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500' },
-              ticks: { color: '#FF9500' },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#FF9500', font: { size: 14 } },
               grid: { drawOnChartArea: false }
             }
           },
-          plugins: {
-            legend: { display: false }
-          }
+          plugins: { legend: { display: false } }
         }
       });
 
@@ -204,20 +202,18 @@
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre', color: '#34C759' },
-              ticks: { color: '#34C759' }
+              title: { display: true, text: 'Nombre de disques', color: '#34C759', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#34C759', font: { size: 14 } }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30' },
-              ticks: { color: '#FF3B30' },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#FF3B30', font: { size: 14 } },
               grid: { drawOnChartArea: false }
             }
           },
-          plugins: {
-            legend: { display: false }
-          }
+          plugins: { legend: { display: false } }
         }
       });
 
