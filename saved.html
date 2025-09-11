@@ -15,16 +15,36 @@
       margin-bottom: 10px;
       color: white;
     }
+    .day-block {
+      margin-bottom: 28px;
+    }
+    .day-header {
+      color: #fff;
+      font-weight: 700;
+      margin: 12px 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .day-date {
+      font-size: 1.05rem;
+    }
+    .day-total {
+      font-size: 1.05rem;
+      color: #FFD166;
+      white-space: nowrap;
+    }
     .snapshot {
       background: white;
       padding: 15px 20px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     .snapshot h2 {
       margin-top: 0;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: #007AFF;
       display: inline-block;
     }
@@ -45,7 +65,8 @@
       font-size: 1.2rem;
       color: white;
       text-align: center;
-      margin-top: 30px;
+      margin-top: 10px;
+      margin-bottom: 20px; /* en haut, avant les ventes */
       font-weight: bold;
     }
     table {
@@ -113,179 +134,4 @@
 
   <!-- Month selector -->
   <select id="monthFilter">
-    <option value="all">Toutes les ventes</option>
-  </select>
-
-  <button id="downloadCsv">Download CSV</button>
-
-  <div id="snapshotsContainer"></div>
-  <div id="totalGlobal" class="total-global"></div>
-
-  <script>
-    const container = document.getElementById('snapshotsContainer');
-    const downloadBtn = document.getElementById('downloadCsv');
-    const totalGlobalDiv = document.getElementById('totalGlobal');
-    const monthFilter = document.getElementById('monthFilter');
-
-    let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
-
-    // Populate month selector
-    function populateMonthSelector() {
-      const monthsSet = new Set();
-      snapshots.forEach(snap => {
-        const d = new Date(snap.time);
-        const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-        monthsSet.add(monthKey);
-      });
-
-      const monthsArray = Array.from(monthsSet).sort((a,b) => b.localeCompare(a)); // descending
-      monthsArray.forEach(monthKey => {
-        const option = document.createElement('option');
-        const [year, month] = monthKey.split('-');
-        option.value = monthKey;
-        option.text = `Ventes de ${month}/${year}`;
-        monthFilter.appendChild(option);
-      });
-    }
-
-    function renderSnapshots() {
-      let filteredSnapshots = snapshots;
-      if (monthFilter.value !== 'all') {
-        filteredSnapshots = snapshots.filter(snap => {
-          const d = new Date(snap.time);
-          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-          return monthKey === monthFilter.value;
-        });
-      }
-
-      if (filteredSnapshots.length === 0) {
-        container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
-        downloadBtn.style.display = 'none';
-        totalGlobalDiv.textContent = '';
-        return;
-      }
-
-      downloadBtn.style.display = 'block';
-      container.innerHTML = '';
-
-      let grandTotal = 0;
-
-      filteredSnapshots.slice().reverse().forEach((snapshot, index) => {
-        const snapshotDiv = document.createElement('div');
-        snapshotDiv.className = 'snapshot';
-
-        const date = new Date(snapshot.time);
-        const formattedDate = date.toLocaleString();
-
-        snapshotDiv.innerHTML = `
-          <h2>${formattedDate}</h2>
-          <button class="delete-btn" onclick="deleteSnapshot(${snapshots.indexOf(snapshot)})">🗑️ Supprimer</button>
-        `;
-
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-          <tr>
-            <th>Category</th>
-            <th>Style</th>
-            <th>Price per Unit</th>
-          </tr>`;
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-        let subtotal = 0;
-
-        snapshot.entries.forEach(entry => {
-          const price = parseFloat(entry.price) || 0;
-          subtotal += price;
-
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${entry.category}</td><td>${entry.style || ''}</td><td>${price.toFixed(2)}</td>`;
-          tbody.appendChild(row);
-        });
-
-        grandTotal += subtotal;
-        table.appendChild(tbody);
-        snapshotDiv.appendChild(table);
-
-        const totalEl = document.createElement('div');
-        totalEl.className = 'total-per-snapshot';
-        totalEl.textContent = `Total: €${subtotal.toFixed(2)}`;
-        snapshotDiv.appendChild(totalEl);
-
-        container.appendChild(snapshotDiv);
-      });
-
-      totalGlobalDiv.textContent = `Total général de toutes les ventes : €${grandTotal.toFixed(2)}`;
-    }
-
-    function deleteSnapshot(index) {
-      if (confirm("Supprimer cette vente ?")) {
-        snapshots.splice(index, 1);
-        localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
-        populateMonthSelector();
-        renderSnapshots();
-      }
-    }
-
-    function generateFilename() {
-      const now = new Date();
-      const pad = n => n.toString().padStart(2, '0');
-      const y = now.getFullYear();
-      const m = pad(now.getMonth() + 1);
-      const d = pad(now.getDate());
-      const hh = pad(now.getHours());
-      const mm = pad(now.getMinutes());
-      const ss = pad(now.getSeconds());
-      return `vente_${y}${m}${d}_${hh}${mm}${ss}.csv`;
-    }
-
-    function downloadCSV(filename = 'Ventes.csv') {
-      let filteredSnapshots = snapshots;
-      if (monthFilter.value !== 'all') {
-        filteredSnapshots = snapshots.filter(snap => {
-          const d = new Date(snap.time);
-          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-          return monthKey === monthFilter.value;
-        });
-      }
-
-      if (filteredSnapshots.length === 0) return;
-
-      let csvContent = 'Time,Category,Style,Price per Unit\n';
-      filteredSnapshots.forEach(snapshot => {
-        const date = new Date(snapshot.time).toLocaleString();
-        snapshot.entries.forEach(entry => {
-          const category = `"${entry.category}"`;
-          const style = `"${entry.style || ''}"`;
-          const price = entry.price;
-          csvContent += `${date},${category},${style},${price}\n`;
-        });
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
-        const file = new File([blob], filename, { type: 'text/csv' });
-        navigator.share({ files: [file] }).catch(err => {
-          console.warn('Partage annulé ou non supporté :', err);
-        });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    }
-
-    monthFilter.addEventListener('change', renderSnapshots);
-    downloadBtn.addEventListener('click', () => downloadCSV(generateFilename()));
-
-    populateMonthSelector();
-    renderSnapshots();
-  </script>
-</body>
-</html>
+    <option value
