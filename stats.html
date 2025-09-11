@@ -27,12 +27,14 @@
     }
     canvas {
       display: block;
-      max-width: 900px;
-      margin: 20px auto;
+      width: 95% !important;   /* prend presque toute la largeur */
+      max-width: 1200px;       /* plus large */
+      height: 500px !important;/* plus haut */
+      margin: 30px auto;
       background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     a.back-link {
       display: inline-block;
@@ -48,8 +50,8 @@
       text-align: center;
       color: white;
       font-weight: bold;
-      margin-top: 30px;
-      font-size: 1.2rem;
+      margin-top: 40px;
+      font-size: 1.4rem;
     }
   </style>
 </head>
@@ -68,13 +70,11 @@
   <div id="totalMonth" class="total-month"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
   <script>
     const monthSelect = document.getElementById("monthSelect");
     const totalMonthDiv = document.getElementById("totalMonth");
     const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
 
-    // Remplir la liste des mois
     function populateMonths() {
       const months = new Set();
       snapshots.forEach(snap => {
@@ -156,35 +156,26 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre' }
+              title: { display: true, text: 'Nombre', color: '#007AFF' },
+              ticks: { color: '#007AFF' }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)' },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500' },
+              ticks: { color: '#FF9500' },
               grid: { drawOnChartArea: false }
             }
           },
           plugins: {
-            legend: { position: 'right' },
-            datalabels: {
-              color: '#000',
-              anchor: 'end',
-              align: 'top',
-              formatter: (val, ctx) => {
-                if (ctx.dataset.label.includes("CHF")) {
-                  return val.toFixed(2) + " CHF";
-                }
-                return val;
-              }
-            }
+            legend: { display: false }
           }
-        },
-        plugins: [ChartDataLabels]
+        }
       });
 
       styleChart = new Chart(styleCtx, {
@@ -208,38 +199,28 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre' }
+              title: { display: true, text: 'Nombre', color: '#34C759' },
+              ticks: { color: '#34C759' }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)' },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30' },
+              ticks: { color: '#FF3B30' },
               grid: { drawOnChartArea: false }
             }
           },
           plugins: {
-            legend: { position: 'right' },
-            datalabels: {
-              color: '#000',
-              anchor: 'end',
-              align: 'top',
-              formatter: (val, ctx) => {
-                if (ctx.dataset.label.includes("CHF")) {
-                  return val.toFixed(2) + " CHF";
-                }
-                return val;
-              }
-            }
+            legend: { display: false }
           }
-        },
-        plugins: [ChartDataLabels]
+        }
       });
 
-      // Afficher le total des ventes du mois
       totalMonthDiv.textContent = `Total du mois : ${totalMonthDiscs} disques | ${totalMonthSales.toFixed(2)} CHF`;
     }
 
@@ -247,7 +228,6 @@
       renderCharts(monthSelect.value);
     });
 
-    // Init
     populateMonths();
     if (monthSelect.options.length > 0) {
       renderCharts(monthSelect.value);
