@@ -27,12 +27,12 @@
     }
     canvas {
       display: block;
-      width: 95% !important;
-      max-width: 900px;
-      height: 400px !important;
+      width: 100% !important;
+      max-width: 1000px;
+      height: 450px !important;
       margin: 25px auto;
       background: white;
-      padding: 20px;
+      padding: 25px;
       border-radius: 10px;
       box-shadow: 0 3px 12px rgba(0,0,0,0.15);
     }
@@ -51,7 +51,7 @@
       color: white;
       font-weight: bold;
       margin-top: 30px;
-      font-size: 1.3rem;
+      font-size: 1.4rem;
     }
   </style>
 </head>
@@ -158,17 +158,20 @@
           responsive: true,
           maintainAspectRatio: false,
           scales: {
+            x: {
+              ticks: { font: { size: 14 }, color: '#333' }
+            },
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre de disques', color: '#007AFF', font: { size: 16, weight: 'bold' } },
-              ticks: { color: '#007AFF', font: { size: 13 } }
+              title: { display: true, text: 'Nombre de disques', color: '#007AFF', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#007AFF', font: { size: 14 } }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500', font: { size: 16, weight: 'bold' } },
-              ticks: { color: '#FF9500', font: { size: 13 } },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF9500', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#FF9500', font: { size: 14 } },
               grid: { drawOnChartArea: false }
             }
           },
@@ -199,17 +202,20 @@
           responsive: true,
           maintainAspectRatio: false,
           scales: {
+            x: {
+              ticks: { font: { size: 14 }, color: '#333' }
+            },
             yCount: {
               type: 'linear',
               position: 'left',
-              title: { display: true, text: 'Nombre de disques', color: '#34C759', font: { size: 16, weight: 'bold' } },
-              ticks: { color: '#34C759', font: { size: 13 } }
+              title: { display: true, text: 'Nombre de disques', color: '#34C759', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#34C759', font: { size: 14 } }
             },
             yValue: {
               type: 'linear',
               position: 'right',
-              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30', font: { size: 16, weight: 'bold' } },
-              ticks: { color: '#FF3B30', font: { size: 13 } },
+              title: { display: true, text: 'Valeur (CHF)', color: '#FF3B30', font: { size: 18, weight: 'bold' } },
+              ticks: { color: '#FF3B30', font: { size: 14 } },
               grid: { drawOnChartArea: false }
             }
           },
