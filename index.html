@@ -120,13 +120,7 @@
       font-size: 14px;
       font-weight: 700;
       color: #111827;
-    }
-    .sidebar input[type="number"] {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
+      text-align: center;
     }
 
     .sum-box {
@@ -185,8 +179,10 @@
 
       <!-- 🆕 Pourboire -->
       <div class="field">
-        <label for="tipInput">Pourboire (CHF)</label>
-        <input id="tipInput" type="number" min="0" max="50" step="1" value="0" />
+        <label for="tipSelect">Pourboire (CHF)</label>
+        <select id="tipSelect">
+          <option value="0" selected>0</option>
+        </select>
       </div>
 
       <div class="sum-box">
@@ -208,7 +204,15 @@
     const totalPriceSpan = document.getElementById('totalPrice');
     const resetBtn = document.getElementById('resetBtn');
     const addRowBtn = document.getElementById('addRowBtn');
-    const tipInput = document.getElementById('tipInput'); // 🆕
+    const tipSelect = document.getElementById('tipSelect'); // 🆕
+
+    // peupler le menu déroulant du pourboire (0 → 20 CHF)
+    for (let t = 1; t <= 20; t++) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      tipSelect.appendChild(opt);
+    }
 
     function makePlaceholderOption() {
       const opt = document.createElement('option');
@@ -261,7 +265,7 @@
       priceCell.appendChild(priceSelect);
       row.appendChild(priceCell);
 
-      // Rabais (0 → 10)
+      // Rabais (menu déroulant 0 → 10)
       const discountCell = document.createElement('td');
       const discountSelect = document.createElement('select');
       discountSelect.appendChild(makePlaceholderOption());
@@ -290,8 +294,8 @@
       let subtotal = 0;
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
-        const priceSelect = row.cells[2].querySelector('select');    // Price
-        const discountSelect = row.cells[3].querySelector('select'); // Rabais
+        const priceSelect = row.cells[2].querySelector('select');
+        const discountSelect = row.cells[3].querySelector('select');
         if (priceSelect && priceSelect.value) {
           const price = Number(priceSelect.value);
           const discount = discountSelect && discountSelect.value ? Number(discountSelect.value) : 0;
@@ -302,17 +306,17 @@
     }
 
     function updateTotal() {
-      const tip = Number(tipInput.value) || 0;
+      const tip = Number(tipSelect.value) || 0;
       const total = computeSubtotalNet() + tip;
       totalPriceSpan.textContent = total;
     }
 
-    // Save current snapshot (with tip)
+    // Save snapshot (incluant le pourboire)
     function saveSnapshot() {
       const rows = tableBody.querySelectorAll('tr');
       let snapshot = {
         time: new Date().toISOString(),
-        tip: Number(tipInput.value) || 0, // 🆕 pourboire au niveau du snapshot
+        tip: Number(tipSelect.value) || 0,
         entries: []
       };
       rows.forEach(row => {
@@ -336,15 +340,14 @@
     }
 
     // Listeners
-    tipInput.addEventListener('input', updateTotal); // 🆕
-
+    tipSelect.addEventListener('change', updateTotal);
     resetBtn.addEventListener('click', () => {
       saveSnapshot();
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
         row.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
       });
-      tipInput.value = 0; // reset du pourboire
+      tipSelect.value = "0";
       updateTotal();
     });
 
@@ -354,7 +357,6 @@
       }
     });
 
-    // Initial calc
     updateTotal();
   </script>
 
