@@ -1,326 +1,312 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Nouvelle vente</title>
+  <title>Toutes les ventes</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 20px;
       background: #2F4F2F;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      min-height: 100vh;
+    }
+    h1 { text-align: center; margin-bottom: 10px; color: white; }
+    .day-block { margin-bottom: 28px; }
+    .day-header {
+      color: #fff; font-weight: 700; margin: 12px 0 8px;
+      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    }
+    .day-date { font-size: 1.05rem; }
+    .day-total { font-size: 1.05rem; color: #FFD166; white-space: nowrap; }
+
+    .snapshot {
+      background: white; padding: 15px 20px; border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 12px;
+    }
+    .snapshot h2 { margin-top: 0; font-size: 1.05rem; color: #007AFF; display: inline-block; }
+    .delete-btn { float: right; background: none; border: none; color: red; font-weight: bold; cursor: pointer; }
+
+    .totals-line { font-weight: bold; text-align: right; margin-top: 10px; }
+    .total-global {
+      font-size: 1.1rem; color: white; text-align: center; margin-top: 10px; margin-bottom: 20px; font-weight: bold;
     }
 
-    .wrapper {
-      display: flex;
-      gap: 60px;
-      max-width: 1000px;
-      width: 100%;
-      height: 80vh;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      padding: 20px;
-      box-sizing: border-box;
-      align-items: center;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: center; }
+    th { background-color: #007AFF; color: white; }
 
-    .container {
-      flex: 1;
-      height: 100%;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
+    a.back-link {
+      display: inline-block; margin-bottom: 10px; color: #007AFF;
+      text-decoration: none; font-weight: 600;
     }
+    a.back-link:hover { text-decoration: underline; }
+    .no-data { text-align: center; margin-top: 50px; color: #ccc; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    button#downloadCsv {
+      background-color: #007AFF; border: none; color: white; padding: 10px 18px;
+      font-size: 16px; border-radius: 6px; cursor: pointer; margin-bottom: 20px;
+      display: block; margin-left: auto; margin-right: auto; font-weight: 600; transition: background-color 0.3s ease; width: 180px;
     }
+    button#downloadCsv:hover { background-color: #005bb5; }
 
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px 12px;
-      text-align: center;
-    }
-
-    th {
-      background-color: #007AFF;
-      color: white;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    select {
-      padding: 5px;
-      font-size: 14px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    #addRowBtn {
-      margin-top: 10px;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      align-self: flex-start;
-      width: 150px;
-      transition: background-color 0.3s ease;
-    }
-    #addRowBtn:hover {
-      background-color: #1e7e34;
-    }
-
-    .sidebar {
-      width: 180px;
-      flex-shrink: 0;
-      background: white;
-      border: none;
-      box-shadow: none;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-    }
-
-    .sidebar button {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #FF3B30;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      transition: background-color 0.3s ease;
-    }
-
-    .sidebar button:hover {
-      background-color: #cc3027;
-    }
-
-    .sum-box {
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-      padding: 15px;
-      border: none;
-      border-radius: 0;
-      color: #007AFF;
-      user-select: none;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    a.saved-link, a.stats-link {
-      display: block;
-      width: 100%;
-      text-align: center;
-      text-decoration: none;
-      background-color: #007AFF;
-      color: white;
-      padding: 10px 0;
-      border-radius: 5px;
-      font-weight: 600;
-      margin-top: 10px;
-      transition: background-color 0.3s ease;
-    }
-
-    a.saved-link:hover, a.stats-link:hover {
-      background-color: #005bb5;
+    select#monthFilter {
+      display: block; margin: 20px auto; padding: 6px 12px; font-size: 16px; border-radius: 6px;
     }
   </style>
 </head>
 <body>
+  <a href="index.html" class="back-link">&larr; Retour à l'accueil</a> |
+  <a href="stats.html" class="back-link">📊 Voir Statistiques</a>
 
-  <div class="wrapper">
-    <div class="container">
-      <h1>Nouvelle vente</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Style</th>
-            <th>Price per Unit</th>
-            <th>Rabais (CHF)</th><!-- 🆕 -->
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <!-- Rows generated by JS -->
-        </tbody>
-      </table>
+  <h1>Toutes les ventes</h1>
 
-      <button id="addRowBtn">Add More Rows</button>
-    </div>
+  <!-- Month selector -->
+  <select id="monthFilter">
+    <option value="all">Toutes les ventes</option>
+  </select>
 
-    <div class="sidebar">
-      <button id="resetBtn">Reset Table</button>
-      <div class="sum-box">
-        Total Price:<br />
-        <span id="totalPrice">0</span>
-      </div>
-      <a href="saved.html" class="saved-link">Toutes les ventes</a>
-      <a href="stats.html" class="stats-link">📊 Statistiques</a>
-    </div>
-  </div>
+  <button id="downloadCsv">Download CSV</button>
+
+  <!-- 🔝 Totaux généraux en haut -->
+  <div id="totalGlobal" class="total-global"></div>
+
+  <!-- Ventes groupées par jour -->
+  <div id="snapshotsContainer"></div>
 
   <script>
-    const categories = ['Neuf', 'Occasion', 'Bar', 'Autres'];
-    const styles = ['3CHF','Extra-EU', 'French/Recording','Hip-Hop', 'Electronic', 'Reggae/Dub', 'Rock', 'Jazz/Blues/Funk', 'Wave','Cassettes','T-shirt','Coffe'];
-    const maxRows = 20;
+    const container = document.getElementById('snapshotsContainer');
+    const downloadBtn = document.getElementById('downloadCsv');
+    const totalGlobalDiv = document.getElementById('totalGlobal');
+    const monthFilter = document.getElementById('monthFilter');
 
-    const tableBody = document.getElementById('tableBody');
-    const totalPriceSpan = document.getElementById('totalPrice');
-    const resetBtn = document.getElementById('resetBtn');
-    const addRowBtn = document.getElementById('addRowBtn');
+    let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
 
-    function makePlaceholderOption() {
-      const opt = document.createElement('option');
-      opt.value = "";
-      opt.textContent = "-- select --";
-      opt.selected = true;
-      opt.disabled = true;
-      return opt;
+    const fmtCHF = (n) =>
+      new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 2 }).format(n);
+
+    // Populate month selector
+    function populateMonthSelector() {
+      monthFilter.innerHTML = '<option value="all">Toutes les ventes</option>';
+
+      const monthsSet = new Set();
+      snapshots.forEach(snap => {
+        const d = new Date(snap.time);
+        const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+        monthsSet.add(monthKey);
+      });
+
+      const monthsArray = Array.from(monthsSet).sort((a,b) => b.localeCompare(a));
+      monthsArray.forEach(monthKey => {
+        const option = document.createElement('option');
+        const [year, month] = monthKey.split('-');
+        option.value = monthKey;
+        option.text = `Ventes de ${month}/${year}`;
+        monthFilter.appendChild(option);
+      });
     }
 
-    function createRow() {
-      const row = document.createElement('tr');
-
-      // Category cell
-      const categoryCell = document.createElement('td');
-      const categorySelect = document.createElement('select');
-      categorySelect.appendChild(makePlaceholderOption());
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        categorySelect.appendChild(option);
-      });
-      categoryCell.appendChild(categorySelect);
-      row.appendChild(categoryCell);
-
-      // Style cell
-      const styleCell = document.createElement('td');
-      const styleSelect = document.createElement('select');
-      styleSelect.appendChild(makePlaceholderOption());
-      styles.forEach(st => {
-        const option = document.createElement('option');
-        option.value = st;
-        option.textContent = st;
-        styleSelect.appendChild(option);
-      });
-      styleCell.appendChild(styleSelect);
-      row.appendChild(styleCell);
-
-      // Price cell
-      const priceCell = document.createElement('td');
-      const priceSelect = document.createElement('select');
-      priceSelect.appendChild(makePlaceholderOption());
-      for (let price = 1; price <= 200; price++) {
-        const option = document.createElement('option');
-        option.value = price;
-        option.textContent = price;
-        priceSelect.appendChild(option);
+    function renderSnapshots() {
+      let filteredSnapshots = snapshots;
+      if (monthFilter.value !== 'all') {
+        filteredSnapshots = snapshots.filter(snap => {
+          const d = new Date(snap.time);
+          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+          return monthKey === monthFilter.value;
+        });
       }
-      priceCell.appendChild(priceSelect);
-      row.appendChild(priceCell);
 
-      // Rabais cell (0 → 10 CHF)  🆕
-      const discountCell = document.createElement('td');
-      const discountSelect = document.createElement('select');
-      discountSelect.appendChild(makePlaceholderOption());
-      for (let d = 0; d <= 10; d++) {
-        const option = document.createElement('option');
-        option.value = d;
-        option.textContent = d;
-        discountSelect.appendChild(option);
+      if (filteredSnapshots.length === 0) {
+        container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
+        downloadBtn.style.display = 'none';
+        totalGlobalDiv.textContent = '';
+        return;
       }
-      discountCell.appendChild(discountSelect);
-      row.appendChild(discountCell);
 
-      // Listeners to update total when price or discount changes
-      priceSelect.addEventListener('change', updateTotal);
-      discountSelect.addEventListener('change', updateTotal);
+      downloadBtn.style.display = 'block';
+      container.innerHTML = '';
 
-      return row;
-    }
+      // Grouper par jour et calculer totaux
+      const byDay = {}; // { 'YYYY-MM-DD': { net: number, tips: number, count: number, items: [...] } }
+      let grandNet = 0, grandTips = 0;
 
-    // Generate initial rows
-    for (let i = 0; i < maxRows; i++) {
-      tableBody.appendChild(createRow());
-    }
+      filteredSnapshots.forEach((snapshot) => {
+        const d = new Date(snapshot.time);
+        const dayKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
 
-    function updateTotal() {
-      let total = 0;
-      const rows = tableBody.querySelectorAll('tr');
-      rows.forEach(row => {
-        const priceSelect = row.cells[2].querySelector('select');    // Price column
-        const discountSelect = row.cells[3].querySelector('select'); // Rabais column
-        if (priceSelect && priceSelect.value) {
-          const price = Number(priceSelect.value);
-          const discount = discountSelect && discountSelect.value ? Number(discountSelect.value) : 0;
-          // Empêche le total négatif au cas où
-          total += Math.max(price - discount, 0);
-        }
+        let subNet = 0;
+        let subTips = 0;
+        let cnt = 0;
+
+        snapshot.entries.forEach(e => {
+          const price = parseFloat(e.price) || 0;
+          const discount = parseFloat(e.discount) || 0;
+          const tip = parseFloat(e.tip) || 0; // 🆕 pourboires
+          const net = Math.max(price - discount, 0);
+          subNet += net;
+          subTips += tip;
+          cnt += 1;
+        });
+
+        if (!byDay[dayKey]) byDay[dayKey] = { net: 0, tips: 0, count: 0, items: [] };
+        byDay[dayKey].net += subNet;
+        byDay[dayKey].tips += subTips;
+        byDay[dayKey].count += cnt;
+        byDay[dayKey].items.push({ snapshot, subNet, subTips, count: cnt });
+
+        grandNet += subNet;
+        grandTips += subTips;
       });
-      totalPriceSpan.textContent = total;
-    }
 
-    resetBtn.addEventListener('click', () => {
-      saveSnapshot();
-      const rows = tableBody.querySelectorAll('tr');
-      rows.forEach(row => {
-        row.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
-      });
-      updateTotal();
-    });
+      // 🔝 Totaux généraux
+      totalGlobalDiv.textContent =
+        `Total général — Produits NET: ${fmtCHF(grandNet)} | Pourboires: ${fmtCHF(grandTips)} | Encaisse: ${fmtCHF(grandNet + grandTips)}`;
 
-    function saveSnapshot() {
-      const rows = tableBody.querySelectorAll('tr');
-      let snapshot = {
-        time: new Date().toISOString(),
-        entries: []
-      };
-      rows.forEach(row => {
-        const categorySelect = row.cells[0].querySelector('select');
-        const styleSelect = row.cells[1].querySelector('select');
-        const priceSelect = row.cells[2].querySelector('select');
-        const discountSelect = row.cells[3].querySelector('select'); // 🆕
-        if (categorySelect.value && styleSelect.value && priceSelect.value) {
-          snapshot.entries.push({
-            category: categorySelect.value,
-            style: styleSelect.value,
-            price: Number(priceSelect.value),
-            discount: discountSelect && discountSelect.value ? Number(discountSelect.value) : 0 // 🆕
+      // Afficher chaque jour
+      const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a)); // récents d’abord
+
+      sortedDays.forEach(dayKey => {
+        const dayBlock = document.createElement('div');
+        dayBlock.className = 'day-block';
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        const dateParts = dayKey.split('-');
+        const niceDate = new Date(`${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00`);
+        const dateLabel = niceDate.toLocaleDateString('fr-CH', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+        dayHeader.innerHTML = `
+          <span class="day-date">${dateLabel}</span>
+          <span class="day-total">
+            Total du jour : ${byDay[dayKey].count} disques — NET ${fmtCHF(byDay[dayKey].net)} | Tips ${fmtCHF(byDay[dayKey].tips)} | Encaisse ${fmtCHF(byDay[dayKey].net + byDay[dayKey].tips)}
+          </span>
+        `;
+        dayBlock.appendChild(dayHeader);
+
+        // lister les snapshots du jour (ordre antéchronologique)
+        byDay[dayKey].items.sort((a, b) => new Date(b.snapshot.time) - new Date(a.snapshot.time));
+
+        byDay[dayKey].items.forEach(({ snapshot, subNet, subTips, count }) => {
+          const snapshotDiv = document.createElement('div');
+          snapshotDiv.className = 'snapshot';
+
+          const date = new Date(snapshot.time);
+          const formattedDate = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // heure seulement
+
+          snapshotDiv.innerHTML = `
+            <h2>${formattedDate}</h2>
+            <button class="delete-btn" onclick="deleteSnapshot(${snapshots.indexOf(snapshot)})">🗑️ Supprimer</button>
+          `;
+
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = `
+            <tr>
+              <th>Category</th>
+              <th>Style</th>
+              <th>Prix (CHF)</th>
+              <th>Rabais (CHF)</th>
+              <th>Pourboires (CHF)</th>
+              <th>Net (CHF)</th>
+            </tr>`;
+          table.appendChild(thead);
+
+          const tbody = document.createElement('tbody');
+
+          snapshot.entries.forEach(entry => {
+            const price = parseFloat(entry.price) || 0;
+            const discount = parseFloat(entry.discount) || 0;
+            const tip = parseFloat(entry.tip) || 0;
+            const net = Math.max(price - discount, 0);
+            const row = document.createElement('tr');
+            row.innerHTML =
+              `<td>${entry.category}</td>
+               <td>${entry.style || ''}</td>
+               <td>${price.toFixed(2)}</td>
+               <td>${discount.toFixed(2)}</td>
+               <td>${tip.toFixed(2)}</td>
+               <td>${net.toFixed(2)}</td>`;
+            tbody.appendChild(row);
           });
-        }
+
+          table.appendChild(tbody);
+          snapshotDiv.appendChild(table);
+
+          const totalEl = document.createElement('div');
+          totalEl.className = 'totals-line';
+          totalEl.textContent = `Total snapshot — NET: ${fmtCHF(subNet)} | Tips: ${fmtCHF(subTips)} | Encaisse: ${fmtCHF(subNet + subTips)} ( ${count} disques )`;
+          snapshotDiv.appendChild(totalEl);
+
+          dayBlock.appendChild(snapshotDiv);
+        });
+
+        container.appendChild(dayBlock);
       });
-      if (snapshot.entries.length === 0) return;
-      let savedSnapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
-      savedSnapshots.push(snapshot);
-      localStorage.setItem('savedSnapshots', JSON.stringify(savedSnapshots));
     }
 
-    addRowBtn.addEventListener('click', () => {
-      for (let i = 0; i < 10; i++) {
-        tableBody.appendChild(createRow());
+    function deleteSnapshot(index) {
+      if (confirm("Supprimer cette vente ?")) {
+        snapshots.splice(index, 1);
+        localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
+        populateMonthSelector();
+        renderSnapshots();
       }
-    });
+    }
 
-    updateTotal();
+    function generateFilename() {
+      const now = new Date();
+      const pad = n => n.toString().padStart(2, '0');
+      const y = now.getFullYear(), m = pad(now.getMonth() + 1), d = pad(now.getDate());
+      const hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
+      return `ventes_${y}${m}${d}_${hh}${mm}${ss}.csv`;
+    }
+
+    function downloadCSV(filename = generateFilename()) {
+      let filteredSnapshots = snapshots;
+      if (monthFilter.value !== 'all') {
+        filteredSnapshots = snapshots.filter(snap => {
+          const d = new Date(snap.time);
+          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+          return monthKey === monthFilter.value;
+        });
+      }
+
+      if (filteredSnapshots.length === 0) return;
+
+      // CSV avec rabais et pourboires
+      let csvContent = 'Time,Category,Style,Price (CHF),Discount (CHF),Tip (CHF),Net (CHF)\n';
+      filteredSnapshots.forEach(snapshot => {
+        const date = new Date(snapshot.time).toLocaleString('fr-CH');
+        snapshot.entries.forEach(entry => {
+          const price = +entry.price || 0;
+          const discount = +entry.discount || 0;
+          const tip = +entry.tip || 0;
+          const net = Math.max(price - discount, 0);
+          const category = `"${entry.category}"`;
+          const style = `"${entry.style || ''}"`;
+          csvContent += `${date},${category},${style},${price},${discount},${tip},${net}\n`;
+        });
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        const file = new File([blob], filename, { type: 'text/csv' });
+        navigator.share({ files: [file] }).catch(err => {
+          console.warn('Partage annulé ou non supporté :', err);
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+    }
+
+    monthFilter.addEventListener('change', renderSnapshots);
+    downloadBtn.addEventListener('click', () => downloadCSV());
+
+    populateMonthSelector();
+    renderSnapshots();
   </script>
-
 </body>
 </html>
