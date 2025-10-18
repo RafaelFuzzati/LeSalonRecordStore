@@ -154,6 +154,7 @@
             <th>Category</th>
             <th>Style</th>
             <th>Price per Unit</th>
+            <th>Rabais (CHF)</th><!-- 🆕 -->
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -185,18 +186,22 @@
     const resetBtn = document.getElementById('resetBtn');
     const addRowBtn = document.getElementById('addRowBtn');
 
+    function makePlaceholderOption() {
+      const opt = document.createElement('option');
+      opt.value = "";
+      opt.textContent = "-- select --";
+      opt.selected = true;
+      opt.disabled = true;
+      return opt;
+    }
+
     function createRow() {
       const row = document.createElement('tr');
 
       // Category cell
       const categoryCell = document.createElement('td');
       const categorySelect = document.createElement('select');
-      const emptyOptionCat = document.createElement('option');
-      emptyOptionCat.value = "";
-      emptyOptionCat.textContent = "-- select --";
-      emptyOptionCat.selected = true;
-      emptyOptionCat.disabled = true;
-      categorySelect.appendChild(emptyOptionCat);
+      categorySelect.appendChild(makePlaceholderOption());
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -209,12 +214,7 @@
       // Style cell
       const styleCell = document.createElement('td');
       const styleSelect = document.createElement('select');
-      const emptyOptionStyle = document.createElement('option');
-      emptyOptionStyle.value = "";
-      emptyOptionStyle.textContent = "-- select --";
-      emptyOptionStyle.selected = true;
-      emptyOptionStyle.disabled = true;
-      styleSelect.appendChild(emptyOptionStyle);
+      styleSelect.appendChild(makePlaceholderOption());
       styles.forEach(st => {
         const option = document.createElement('option');
         option.value = st;
@@ -227,12 +227,7 @@
       // Price cell
       const priceCell = document.createElement('td');
       const priceSelect = document.createElement('select');
-      const emptyOptionPrice = document.createElement('option');
-      emptyOptionPrice.value = "";
-      emptyOptionPrice.textContent = "-- select --";
-      emptyOptionPrice.selected = true;
-      emptyOptionPrice.disabled = true;
-      priceSelect.appendChild(emptyOptionPrice);
+      priceSelect.appendChild(makePlaceholderOption());
       for (let price = 1; price <= 200; price++) {
         const option = document.createElement('option');
         option.value = price;
@@ -242,8 +237,22 @@
       priceCell.appendChild(priceSelect);
       row.appendChild(priceCell);
 
-      // Listener to update total
+      // Rabais cell (0 → 10 CHF)  🆕
+      const discountCell = document.createElement('td');
+      const discountSelect = document.createElement('select');
+      discountSelect.appendChild(makePlaceholderOption());
+      for (let d = 0; d <= 10; d++) {
+        const option = document.createElement('option');
+        option.value = d;
+        option.textContent = d;
+        discountSelect.appendChild(option);
+      }
+      discountCell.appendChild(discountSelect);
+      row.appendChild(discountCell);
+
+      // Listeners to update total when price or discount changes
       priceSelect.addEventListener('change', updateTotal);
+      discountSelect.addEventListener('change', updateTotal);
 
       return row;
     }
@@ -257,9 +266,13 @@
       let total = 0;
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
-        const priceSelect = row.cells[2].querySelector('select'); // 3rd column
+        const priceSelect = row.cells[2].querySelector('select');    // Price column
+        const discountSelect = row.cells[3].querySelector('select'); // Rabais column
         if (priceSelect && priceSelect.value) {
-          total += Number(priceSelect.value);
+          const price = Number(priceSelect.value);
+          const discount = discountSelect && discountSelect.value ? Number(discountSelect.value) : 0;
+          // Empêche le total négatif au cas où
+          total += Math.max(price - discount, 0);
         }
       });
       totalPriceSpan.textContent = total;
@@ -284,11 +297,13 @@
         const categorySelect = row.cells[0].querySelector('select');
         const styleSelect = row.cells[1].querySelector('select');
         const priceSelect = row.cells[2].querySelector('select');
+        const discountSelect = row.cells[3].querySelector('select'); // 🆕
         if (categorySelect.value && styleSelect.value && priceSelect.value) {
           snapshot.entries.push({
             category: categorySelect.value,
             style: styleSelect.value,
-            price: Number(priceSelect.value)
+            price: Number(priceSelect.value),
+            discount: discountSelect && discountSelect.value ? Number(discountSelect.value) : 0 // 🆕
           });
         }
       });
