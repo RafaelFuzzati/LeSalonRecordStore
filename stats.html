@@ -38,15 +38,30 @@
     .kpi-value{font-size:30px; font-weight:900}
     .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
 
-    /* calendrier */
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .cal-head { text-align: center; font-weight: 700; font-size: 12px; color: #e5e7eb; margin-bottom: 4px; }
-    .day { background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center; min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px; }
+    /* ====== Calendrier avec total semaine ====== */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr) 120px; /* Lun..Dim + Total semaine */
+      gap: 6px;
+    }
+    .cal-head {
+      text-align: center; font-weight: 700; font-size: 12px; color: #e5e7eb; margin-bottom: 4px;
+    }
+    .cal-head.total-head { text-align:center; }
+    .day {
+      background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center;
+      min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px;
+    }
     .day.empty { background: transparent; box-shadow: none; }
     .day.no-sale { background: #374151; color: #9ca3af; }
     .d {font-weight:900; font-size:16px}
     .v {font-size:11px; color:#f1f5f9}
     .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
+    .week-total{
+      background:#111827; color:#fff; border-radius:10px; padding:8px; text-align:center;
+      min-height:70px; display:flex; flex-direction:column; justify-content:center; gap:4px; font-size:12px; font-weight:800;
+    }
+    .week-total .v { font-size:11px; color:#f1f5f9; font-weight:600; }
     .hint{color:#e5e7eb; font-size:12px; margin-top:8px}
 
     .list{display:flex; flex-direction:column; gap:14px}
@@ -116,7 +131,7 @@
   <section id="calendarSection" class="section card">
     <h3>Ventes ce mois (calendrier) — montants nets</h3>
     <div id="calendar" class="calendar"></div>
-    <div class="hint">Lun → Dim, jours sans ventes en gris.</div>
+    <div class="hint">Lun → Dim, jours sans ventes en gris. Colonne à droite : total par semaine.</div>
   </section>
 
   <!-- Breakdown (toujours visible, selon période) -->
@@ -126,7 +141,7 @@
       <div id="catList" class="list"></div>
     </div>
     <div class="card">
-      <h3 id="styleTitle">Répartition par style (NET) — avec Neuf vs Occasion</h3>
+      <h3 id="styleTitle">Répartition par style (NET) — Neuf vs Occasion</h3>
       <div id="styleList" class="list"></div>
     </div>
   </section>
@@ -205,7 +220,7 @@
       const byDay = {};
       const byCatC = {}, byCatS = {};
       const byStyleC = {}, byStyleS = {};
-      const byStyleSplitC = {}, byStyleSplitS = {}; // 🆕
+      const byStyleSplitC = {}, byStyleSplitS = {};
       let totalNet=0, totalCount=0, totalDiscount=0;
 
       data.forEach(s=>{
@@ -243,7 +258,7 @@
     function summarizeYear(data){
       const byCatC = {}, byCatS = {};
       const byStyleC = {}, byStyleS = {};
-      const byStyleSplitC = {}, byStyleSplitS = {}; // 🆕
+      const byStyleSplitC = {}, byStyleSplitS = {};
       const months = Array.from({length:12}, (_,i)=>({ total:0 }));
       let totalNet=0;
 
@@ -289,6 +304,7 @@
       els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
     }
 
+    // ====== Calendrier avec total semaine ======
     function renderCalendar(sum, mkey){
       els.calendar.innerHTML = "";
       if(!mkey){ return; }
@@ -296,26 +312,39 @@
       const first = new Date(y, mo-1, 1);
       const last = new Date(y, mo, 0);
 
+      // En-têtes: Lun..Dim + "Total semaine"
       dayNames.forEach(dn=>{
         const head = document.createElement("div");
         head.className = "cal-head";
         head.textContent = dn;
         els.calendar.appendChild(head);
       });
+      const totalHead = document.createElement("div");
+      totalHead.className = "cal-head total-head";
+      totalHead.textContent = "Total semaine";
+      els.calendar.appendChild(totalHead);
 
-      let startDay = (first.getDay()+6)%7; // lundi=0
-      for(let i=0;i<startDay;i++){
+      const toKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      // max pour intensité
+      const totals = Object.values(sum.byDay).map(d=>d.total);
+      const max = Math.max(1, ...totals);
+
+      // lundi=0
+      let dow = (first.getDay()+6)%7;
+      let weekSum = 0;
+      let weekCount = 0;
+
+      // cases vides avant le 1er
+      for(let i=0;i<dow;i++){
         const empty = document.createElement("div");
         empty.className="day empty";
         els.calendar.appendChild(empty);
       }
 
-      const totals = Object.values(sum.byDay).map(d=>d.total);
-      const max = Math.max(1, ...totals);
-
       for(let day=1; day<=last.getDate(); day++){
         const d = new Date(y, mo-1, day);
-        const key = toDayKey(d);
+        const key = toKey(d);
         const info = sum.byDay[key] || {total:0, count:0};
         const ratio = info.total/max;
         const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
@@ -330,6 +359,37 @@
           box.innerHTML = `<div class="d">${day}</div><div class="v">${info.count} | ${CHF(info.total)}</div>`;
         }
         els.calendar.appendChild(box);
+
+        // accumulateur semaine
+        weekSum += info.total;
+        weekCount += info.count;
+
+        // si Dimanche (dow==6) OU fin de mois, on ferme la ligne:
+        const isWeekEnd = dow === 6;
+        const isMonthEnd = day === last.getDate();
+        if(isWeekEnd || isMonthEnd){
+          // compléter jusqu'à dimanche si le mois finit avant
+          if(isMonthEnd && dow < 6){
+            for(let i=dow+1; i<=6; i++){
+              const empty = document.createElement("div");
+              empty.className="day empty";
+              els.calendar.appendChild(empty);
+            }
+          }
+          // ajouter la cellule "Total semaine"
+          const wk = document.createElement("div");
+          wk.className = "week-total";
+          wk.title = `Semaine • ${weekCount} disques — ${CHF(weekSum)}`;
+          wk.innerHTML = `<div>Total</div><div class="v">${weekCount} | ${CHF(weekSum)}</div>`;
+          els.calendar.appendChild(wk);
+
+          // reset semaine
+          weekSum = 0;
+          weekCount = 0;
+        }
+
+        // avancer le jour de la semaine
+        dow = (dow + 1) % 7;
       }
     }
 
@@ -358,7 +418,7 @@
       }
     }
 
-    // 🆕 rendu par style avec split Neuf / Occasion (+ Autres si présent)
+    // rendu par style avec split Neuf / Occasion (+ Autres si présent)
     function renderStyleSplit(containerList, splitCounts, splitSums, totalNet){
       const styles = Object.keys(splitCounts).map(st=>({
         name: st,
@@ -424,7 +484,7 @@
       els.calendarSection.style.display = showMonth ? '' : 'none';
       els.compareSection.style.display = showMonth ? 'none' : '';
       els.catTitle.textContent = showMonth ? 'Répartition par catégorie (NET — mois)' : 'Répartition par catégorie (NET — année)';
-      els.styleTitle.textContent = showMonth ? 'Répartition par style (NET) — avec Neuf vs Occasion' : 'Répartition par style (NET) — avec Neuf vs Occasion';
+      els.styleTitle.textContent = 'Répartition par style (NET) — Neuf vs Occasion';
       els.compareTitle.textContent = 'Mois de l’année sélectionnée (NET)';
     }
 
@@ -439,14 +499,14 @@
         renderKPI(sum);
         renderCalendar(sum, mkey);
         renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
-        renderStyleSplit(els.styleList, sum.byStyleSplitC, sum.byStyleSplitS, sum.totalNet); // 🆕
+        renderStyleSplit(els.styleList, sum.byStyleSplitC, sum.byStyleSplitS, sum.totalNet);
       } else {
         const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
         const yearData = filterByYear(year);
         const ySum = summarizeYear(yearData);
         // Pas de KPI annuel, pas de calendrier.
         renderBreakdown(els.catList, ySum.byCatC, ySum.byCatS, ySum.totalNet);
-        renderStyleSplit(els.styleList, ySum.byStyleSplitC, ySum.byStyleSplitS, ySum.totalNet); // 🆕
+        renderStyleSplit(els.styleList, ySum.byStyleSplitC, ySum.byStyleSplitS, ySum.totalNet);
         renderMonthComparisonForYear(ySum, year);
       }
     }
