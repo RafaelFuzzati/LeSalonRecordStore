@@ -11,10 +11,7 @@
       --heat0:#1f2937; --heat1:#134e4a; --heat2:#0ea5e9; --heat3:#f59e0b; --heat4:#ef4444;
     }
     *{box-sizing:border-box}
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      margin:0; padding:20px; background:var(--bg); color:#fff; min-height:100vh;
-    }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0; padding:20px; background:var(--bg); color:#fff; min-height:100vh;}
     a.back-link{color:#f9a8d4; text-decoration:none; font-weight:600}
     a.back-link:hover{text-decoration:underline}
     h1{margin:10px 0 16px; text-align:center; color:#f9a8d4}
@@ -24,11 +21,11 @@
     .controls select{
       padding:10px 12px; border-radius:10px; border:none; font-size:14px; background:#fff; color:#111827; font-weight:600;
     }
+    .period{display:flex; gap:8px; align-items:center; background:#ffffff22; padding:6px 10px; border-radius:999px}
+    .period input{accent-color:#f9a8d4}
+
     .section{margin-bottom:28px;}
-    .card{
-      background:var(--card); color:var(--ink);
-      border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.18);
-    }
+    .card{background:var(--card); color:var(--ink); border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.18);}
     .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
 
     .grid{display:grid; gap:20px}
@@ -41,31 +38,9 @@
     .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
 
     /* calendrier */
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-    }
-    .cal-head {
-      text-align: center;
-      font-weight: 700;
-      font-size: 12px;
-      color: #e5e7eb;
-      margin-bottom: 4px;
-    }
-    .day {
-      background: var(--heat0);
-      color: #fff;
-      border-radius: 10px;
-      padding: 8px;
-      text-align: center;
-      min-height: 70px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-      font-size: 12px;
-    }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .cal-head { text-align: center; font-weight: 700; font-size: 12px; color: #e5e7eb; margin-bottom: 4px; }
+    .day { background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center; min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px; }
     .day.empty { background: transparent; box-shadow: none; }
     .day.no-sale { background: #374151; color: #9ca3af; }
     .d {font-weight:900; font-size:16px}
@@ -86,6 +61,7 @@
     .month-row .label{font-weight:800}
     .month-barwrap{background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
     .month-bar{height:100%; background:linear-gradient(90deg,var(--bar2),var(--bar1))}
+    .muted{color:#9ca3af}
   </style>
 </head>
 <body>
@@ -99,15 +75,20 @@
   <h1>Statistiques des ventes</h1>
 
   <div class="controls">
+    <div class="period">
+      <label><input type="radio" name="period" value="month" checked> Mois</label>
+      <label><input type="radio" name="period" value="year"> Année</label>
+    </div>
+
     <label for="monthSelect">Mois :</label>
     <select id="monthSelect"></select>
 
-    <label for="yearSelect">Année :</label>
-    <select id="yearSelect"></select>
+    <label for="yearSelect" class="year-label" style="display:none">Année :</label>
+    <select id="yearSelect" style="display:none"></select>
   </div>
 
-  <!-- KPIs (mois sélectionné) -->
-  <section class="section grid kpis">
+  <!-- KPIs (uniquement en mode Mois) -->
+  <section id="kpiSection" class="section grid kpis">
     <div class="card">
       <h3>Total NET (après rabais)</h3>
       <div class="kpi-value" id="kpiTotal">—</div>
@@ -125,54 +106,29 @@
     </div>
   </section>
 
-  <!-- Calendrier (mois) -->
-  <section class="section card">
+  <!-- Calendrier (uniquement en mode Mois) -->
+  <section id="calendarSection" class="section card">
     <h3>Ventes ce mois (calendrier) — montants nets</h3>
     <div id="calendar" class="calendar"></div>
     <div class="hint">Lun → Dim, jours sans ventes en gris.</div>
   </section>
 
-  <!-- Breakdown (mois) -->
+  <!-- Breakdown (toujours visible, selon période) -->
   <section class="section grid two-col">
     <div class="card">
-      <h3>Répartition par catégorie (NET)</h3>
+      <h3 id="catTitle">Répartition par catégorie (NET)</h3>
       <div id="catList" class="list"></div>
     </div>
     <div class="card">
-      <h3>Répartition par style (NET)</h3>
+      <h3 id="styleTitle">Répartition par style (NET)</h3>
       <div id="styleList" class="list"></div>
     </div>
   </section>
 
-  <!-- Comparaison mensuelle (toutes périodes) -->
-  <section class="section card">
-    <h3>Comparaison par mois (toutes années, NET)</h3>
+  <!-- Comparaison mensuelle (UNIQUEMENT en mode Année) -->
+  <section id="compareSection" class="section card" style="display:none">
+    <h3 id="compareTitle">Mois de l’année sélectionnée (NET)</h3>
     <div id="monthCompare" class="month-list"></div>
-  </section>
-
-  <!-- Vue annuelle -->
-  <section class="section grid two-col">
-    <div class="card">
-      <h3>Vue annuelle — KPI</h3>
-      <div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));">
-        <div>
-          <div class="kpi-sub">Total NET (après rabais)</div>
-          <div class="kpi-value" id="ykpiTotal">—</div>
-        </div>
-        <div>
-          <div class="kpi-sub">Disques vendus</div>
-          <div class="kpi-value" id="ykpiCount">—</div>
-        </div>
-        <div>
-          <div class="kpi-sub">Rabais totaux</div>
-          <div class="kpi-value" id="ykpiDiscount">—</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Année sélectionnée — récap par mois (NET)</h3>
-      <div id="yearMonthList" class="month-list"></div>
-    </div>
   </section>
 
   <script>
@@ -181,24 +137,33 @@
     const dayNames = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 
     const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
+
+    const periodInputs = Array.from(document.querySelectorAll('input[name="period"]'));
     const monthSelect = document.getElementById("monthSelect");
     const yearSelect  = document.getElementById("yearSelect");
+    const yearLabel   = document.querySelector(".year-label");
 
     const els = {
+      // KPI
+      kpiSection: document.getElementById("kpiSection"),
       kpiTotal: document.getElementById("kpiTotal"),
       kpiAvgDay: document.getElementById("kpiAvgDay"),
       kpiCount: document.getElementById("kpiCount"),
       kpiAvgTicket: document.getElementById("kpiAvgTicket"),
       kpiDiscount: document.getElementById("kpiDiscount"),
       kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
+      // Calendar
+      calendarSection: document.getElementById("calendarSection"),
       calendar: document.getElementById("calendar"),
+      // Lists
+      catTitle: document.getElementById("catTitle"),
+      styleTitle: document.getElementById("styleTitle"),
       catList: document.getElementById("catList"),
       styleList: document.getElementById("styleList"),
+      // Compare section
+      compareSection: document.getElementById("compareSection"),
+      compareTitle: document.getElementById("compareTitle"),
       monthCompare: document.getElementById("monthCompare"),
-      ykpiTotal: document.getElementById("ykpiTotal"),
-      ykpiCount: document.getElementById("ykpiCount"),
-      ykpiDiscount: document.getElementById("ykpiDiscount"),
-      yearMonthList: document.getElementById("yearMonthList"),
     };
 
     function monthKeyFromDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1); }
@@ -234,7 +199,7 @@
       return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
     }
 
-    // --- Résumés (net et rabais) ---
+    // --- Résumés (NET et rabais) ---
     function summarizeMonth(data){
       const byDay = {};
       const byCatC = {}, byCatS = {};
@@ -267,47 +232,34 @@
       return { totalNet, totalCount, totalDiscount, byDay, byCatC, byCatS, byStyleC, byStyleS };
     }
 
-    function summarizeAllMonths(){
-      const map = {};
-      snapshots.forEach(s=>{
-        const mk = monthKeyFromDate(new Date(s.time));
-        map[mk] = map[mk] || { total:0, count:0 };
-        let subNet=0, cnt=0;
-        s.entries.forEach(e=>{
-          const price = Number(e.price)||0;
-          const discount = Number(e.discount)||0;
-          subNet += Math.max(price - discount, 0);
-          cnt++;
-        });
-        map[mk].total += subNet; map[mk].count += cnt;
-      });
-      return map;
-    }
-
     function summarizeYear(data){
-      const months = Array.from({length:12}, (_,i)=>({ total:0, count:0, discount:0 }));
-      let totalNet=0, totalCount=0, totalDiscount=0;
+      const byCatC = {}, byCatS = {};
+      const byStyleC = {}, byStyleS = {};
+      const months = Array.from({length:12}, (_,i)=>({ total:0 }));
+      let totalNet=0;
 
       data.forEach(s=>{
         const d = new Date(s.time);
-        const m = d.getMonth(); // 0..11
-        let subNet=0, subDisc=0, cnt=0;
+        const m = d.getMonth();
+        let subNet=0;
 
         s.entries.forEach(e=>{
           const price = Number(e.price)||0;
           const discount = Number(e.discount)||0;
           const net = Math.max(price - discount, 0);
-          subNet += net; subDisc += discount; cnt++;
+          const cat = e.category || "—";
+          const st = e.style || "—";
+
+          subNet += net;
+          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+net;
+          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+net;
         });
 
         months[m].total += subNet;
-        months[m].discount += subDisc;
-        months[m].count += cnt;
-
-        totalNet += subNet; totalDiscount += subDisc; totalCount += cnt;
+        totalNet += subNet;
       });
 
-      return { months, totalNet, totalDiscount, totalCount };
+      return { months, totalNet, byCatC, byCatS, byStyleC, byStyleS };
     }
 
     // --- Rendus UI ---
@@ -328,7 +280,6 @@
       const first = new Date(y, mo-1, 1);
       const last = new Date(y, mo, 0);
 
-      // En-têtes
       dayNames.forEach(dn=>{
         const head = document.createElement("div");
         head.className = "cal-head";
@@ -336,7 +287,6 @@
         els.calendar.appendChild(head);
       });
 
-      // Cases vides avant le 1er
       let startDay = (first.getDay()+6)%7; // lundi=0
       for(let i=0;i<startDay;i++){
         const empty = document.createElement("div");
@@ -344,7 +294,6 @@
         els.calendar.appendChild(empty);
       }
 
-      // max pour intensité
       const totals = Object.values(sum.byDay).map(d=>d.total);
       const max = Math.max(1, ...totals);
 
@@ -362,10 +311,7 @@
         } else {
           box.className = `day lv${lv}`;
           box.title = `${key} • ${info.count} disques — ${CHF(info.total)}`;
-          box.innerHTML = `
-            <div class="d">${day}</div>
-            <div class="v">${info.count} | ${CHF(info.total)}</div>
-          `;
+          box.innerHTML = `<div class="d">${day}</div><div class="v">${info.count} | ${CHF(info.total)}</div>`;
         }
         els.calendar.appendChild(box);
       }
@@ -396,31 +342,8 @@
       }
     }
 
-    function renderMonthComparison(map){
-      const entries = Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
-      const maxT = Math.max(1, ...entries.map(([_,v])=>v.total));
+    function renderMonthComparisonForYear(ySum, year){
       els.monthCompare.innerHTML = "";
-      entries.forEach(([mk, v])=>{
-        const [y,mo] = mk.split("-");
-        const row = document.createElement('div');
-        row.className = 'month-row';
-        row.innerHTML = `
-          <div class="label">${mo}/${y}</div>
-          <div class="month-barwrap"><div class="month-bar" style="width:${(v.total/maxT*100).toFixed(0)}%"></div></div>
-          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(v.total)}</strong></div>
-        `;
-        els.monthCompare.appendChild(row);
-      });
-    }
-
-    function renderYearKPI(ySum){
-      els.ykpiTotal.textContent = CHF(ySum.totalNet);
-      els.ykpiCount.textContent = ySum.totalCount.toString();
-      els.ykpiDiscount.textContent = CHF(ySum.totalDiscount);
-    }
-
-    function renderYearMonths(ySum, year){
-      els.yearMonthList.innerHTML = "";
       const maxT = Math.max(1, ...ySum.months.map(m=>m.total));
       ySum.months.forEach((m, idx)=>{
         const mo = pad(idx+1);
@@ -431,30 +354,59 @@
           <div class="month-barwrap"><div class="month-bar" style="width:${(m.total/maxT*100).toFixed(0)}%"></div></div>
           <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(m.total)}</strong></div>
         `;
-        els.yearMonthList.appendChild(row);
+        els.monthCompare.appendChild(row);
       });
     }
 
-    function renderAll(){
-      const mkey = monthSelect.value || (snapshots[0] ? monthKeyFromDate(new Date(snapshots[0].time)) : "");
-      const monthData = filterByMonth(mkey);
-      const sum = summarizeMonth(monthData);
-      renderKPI(sum);
-      renderCalendar(sum, mkey);
-      renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
-      renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalNet);
-      const allMonths = summarizeAllMonths();
-      renderMonthComparison(allMonths);
+    function summarizeAllMonths(){ /* non utilisé en mode mois (on masque compare), mais conservé si besoin futur */ }
 
-      const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
-      const yearData = filterByYear(year);
-      const ySum = summarizeYear(yearData);
-      renderYearKPI(ySum);
-      renderYearMonths(ySum, year);
+    // --- Mode / affichage ---
+    function updateVisibility(period){
+      const showMonth = period === 'month';
+      // Toggle inputs
+      monthSelect.style.display = showMonth ? '' : 'none';
+      document.querySelector('label[for="monthSelect"]').style.display = showMonth ? '' : 'none';
+      yearSelect.style.display = showMonth ? 'none' : '';
+      yearLabel.style.display = showMonth ? 'none' : '';
+      // Sections
+      els.kpiSection.style.display = showMonth ? '' : 'none';
+      els.calendarSection.style.display = showMonth ? '' : 'none';
+      // Comparaison n'apparaît qu'en année
+      els.compareSection.style.display = showMonth ? 'none' : '';
+      // Titles
+      els.catTitle.textContent = showMonth ? 'Répartition par catégorie (NET — mois)' : 'Répartition par catégorie (NET — année)';
+      els.styleTitle.textContent = showMonth ? 'Répartition par style (NET — mois)' : 'Répartition par style (NET — année)';
+      els.compareTitle.textContent = 'Mois de l’année sélectionnée (NET)';
     }
 
+    function renderAll(){
+      const period = periodInputs.find(i=>i.checked).value;
+      updateVisibility(period);
+
+      if(period === 'month'){
+        const mkey = monthSelect.value || (snapshots[0] ? monthKeyFromDate(new Date(snapshots[0].time)) : "");
+        const monthData = filterByMonth(mkey);
+        const sum = summarizeMonth(monthData);
+        renderKPI(sum);
+        renderCalendar(sum, mkey);
+        renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
+        renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalNet);
+        // Pas de comparaison en mode Mois (section masquée)
+      } else {
+        const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
+        const yearData = filterByYear(year);
+        const ySum = summarizeYear(yearData);
+        // Pas de KPI annuel, pas de calendrier.
+        renderBreakdown(els.catList, ySum.byCatC, ySum.byCatS, ySum.totalNet);
+        renderBreakdown(els.styleList, ySum.byStyleC, ySum.byStyleS, ySum.totalNet);
+        renderMonthComparisonForYear(ySum, year); // visible seulement en mode Année
+      }
+    }
+
+    // Listeners
     monthSelect.addEventListener('change', renderAll);
     yearSelect.addEventListener('change', renderAll);
+    periodInputs.forEach(i => i.addEventListener('change', renderAll));
 
     // Initial render
     renderAll();
