@@ -32,8 +32,9 @@
     .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
 
     .grid{display:grid; gap:20px}
-    .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
     .two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:1100px){ .kpis{grid-template-columns:1fr 1fr} }
     @media (max-width:900px){ .kpis,.two-col{grid-template-columns:1fr} }
 
     .kpi-value{font-size:30px; font-weight:900}
@@ -65,14 +66,8 @@
       gap: 4px;
       font-size: 12px;
     }
-    .day.empty {
-      background: transparent;
-      box-shadow: none;
-    }
-    .day.no-sale {
-      background: #374151;
-      color: #9ca3af;
-    }
+    .day.empty { background: transparent; box-shadow: none; }
+    .day.no-sale { background: #374151; color: #9ca3af; }
     .d {font-weight:900; font-size:16px}
     .v {font-size:11px; color:#f1f5f9}
     .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
@@ -104,14 +99,17 @@
   <h1>Statistiques des ventes</h1>
 
   <div class="controls">
-    <label for="monthSelect">Sélectionnez un mois :</label>
+    <label for="monthSelect">Mois :</label>
     <select id="monthSelect"></select>
+
+    <label for="yearSelect">Année :</label>
+    <select id="yearSelect"></select>
   </div>
 
-  <!-- KPIs -->
+  <!-- KPIs (mois sélectionné) -->
   <section class="section grid kpis">
     <div class="card">
-      <h3>Total CHF</h3>
+      <h3>Total NET (après rabais)</h3>
       <div class="kpi-value" id="kpiTotal">—</div>
       <div class="kpi-sub" id="kpiAvgDay">—</div>
     </div>
@@ -120,31 +118,61 @@
       <div class="kpi-value" id="kpiCount">—</div>
       <div class="kpi-sub" id="kpiAvgTicket">—</div>
     </div>
+    <div class="card">
+      <h3>Rabais totaux</h3>
+      <div class="kpi-value" id="kpiDiscount">—</div>
+      <div class="kpi-sub" id="kpiAvgDiscount">—</div>
+    </div>
   </section>
 
-  <!-- Calendrier -->
+  <!-- Calendrier (mois) -->
   <section class="section card">
-    <h3>Ventes ce mois (calendrier)</h3>
+    <h3>Ventes ce mois (calendrier) — montants nets</h3>
     <div id="calendar" class="calendar"></div>
     <div class="hint">Lun → Dim, jours sans ventes en gris.</div>
   </section>
 
-  <!-- Breakdown -->
+  <!-- Breakdown (mois) -->
   <section class="section grid two-col">
     <div class="card">
-      <h3>Répartition par catégorie</h3>
+      <h3>Répartition par catégorie (NET)</h3>
       <div id="catList" class="list"></div>
     </div>
     <div class="card">
-      <h3>Répartition par style</h3>
+      <h3>Répartition par style (NET)</h3>
       <div id="styleList" class="list"></div>
     </div>
   </section>
 
-  <!-- Comparaison mensuelle -->
+  <!-- Comparaison mensuelle (toutes périodes) -->
   <section class="section card">
-    <h3>Comparaison par mois</h3>
+    <h3>Comparaison par mois (toutes années, NET)</h3>
     <div id="monthCompare" class="month-list"></div>
+  </section>
+
+  <!-- Vue annuelle -->
+  <section class="section grid two-col">
+    <div class="card">
+      <h3>Vue annuelle — KPI</h3>
+      <div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+        <div>
+          <div class="kpi-sub">Total NET (après rabais)</div>
+          <div class="kpi-value" id="ykpiTotal">—</div>
+        </div>
+        <div>
+          <div class="kpi-sub">Disques vendus</div>
+          <div class="kpi-value" id="ykpiCount">—</div>
+        </div>
+        <div>
+          <div class="kpi-sub">Rabais totaux</div>
+          <div class="kpi-value" id="ykpiDiscount">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Année sélectionnée — récap par mois (NET)</h3>
+      <div id="yearMonthList" class="month-list"></div>
+    </div>
   </section>
 
   <script>
@@ -154,24 +182,33 @@
 
     const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
     const monthSelect = document.getElementById("monthSelect");
+    const yearSelect  = document.getElementById("yearSelect");
 
     const els = {
       kpiTotal: document.getElementById("kpiTotal"),
       kpiAvgDay: document.getElementById("kpiAvgDay"),
       kpiCount: document.getElementById("kpiCount"),
       kpiAvgTicket: document.getElementById("kpiAvgTicket"),
+      kpiDiscount: document.getElementById("kpiDiscount"),
+      kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
       calendar: document.getElementById("calendar"),
       catList: document.getElementById("catList"),
       styleList: document.getElementById("styleList"),
       monthCompare: document.getElementById("monthCompare"),
+      ykpiTotal: document.getElementById("ykpiTotal"),
+      ykpiCount: document.getElementById("ykpiCount"),
+      ykpiDiscount: document.getElementById("ykpiDiscount"),
+      yearMonthList: document.getElementById("yearMonthList"),
     };
 
     function monthKeyFromDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1); }
     function toDayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+    function yearFromDate(d){ return d.getFullYear(); }
 
-    (function populateMonths(){
-      const set = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
-      const months = Array.from(set).sort().reverse();
+    // --- Peupler sélecteurs ---
+    (function populateSelectors(){
+      const monthSet = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
+      const months = Array.from(monthSet).sort().reverse();
       monthSelect.innerHTML = "";
       months.forEach(m=>{
         const [y,mo] = m.split("-");
@@ -179,39 +216,55 @@
         op.value = m; op.textContent = `${mo}/${y}`;
         monthSelect.appendChild(op);
       });
+
+      const yearSet = new Set(snapshots.map(s => yearFromDate(new Date(s.time))));
+      const years = Array.from(yearSet).sort((a,b)=>b-a);
+      yearSelect.innerHTML = "";
+      years.forEach(y=>{
+        const op = document.createElement("option");
+        op.value = y; op.textContent = y;
+        yearSelect.appendChild(op);
+      });
     })();
 
     function filterByMonth(mkey){
-      return snapshots.filter(s=>{
-        const d = new Date(s.time);
-        return monthKeyFromDate(d) === mkey;
-      });
+      return snapshots.filter(s=> monthKeyFromDate(new Date(s.time)) === mkey );
+    }
+    function filterByYear(y){
+      return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
     }
 
+    // --- Résumés (net et rabais) ---
     function summarizeMonth(data){
       const byDay = {};
       const byCatC = {}, byCatS = {};
       const byStyleC = {}, byStyleS = {};
-      let totalSales=0, totalCount=0;
+      let totalNet=0, totalCount=0, totalDiscount=0;
 
       data.forEach(s=>{
         const d = new Date(s.time);
         const dayKey = toDayKey(d);
-        let sub=0, cnt=0;
+        let subNet=0, cnt=0;
+
         s.entries.forEach(e=>{
-          const price = parseFloat(e.price)||0;
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          const net = Math.max(price - discount, 0);
           const cat = e.category || "—";
           const st = e.style || "—";
-          totalSales += price; totalCount++;
-          sub += price; cnt++;
-          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+price;
-          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+price;
+
+          totalNet += net; totalDiscount += discount; totalCount++;
+          subNet += net; cnt++;
+
+          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+net;
+          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+net;
         });
+
         if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0 };
-        byDay[dayKey].total+=sub; byDay[dayKey].count+=cnt;
+        byDay[dayKey].total+=subNet; byDay[dayKey].count+=cnt;
       });
 
-      return { totalSales, totalCount, byDay, byCatC, byCatS, byStyleC, byStyleS };
+      return { totalNet, totalCount, totalDiscount, byDay, byCatC, byCatS, byStyleC, byStyleS };
     }
 
     function summarizeAllMonths(){
@@ -219,23 +272,58 @@
       snapshots.forEach(s=>{
         const mk = monthKeyFromDate(new Date(s.time));
         map[mk] = map[mk] || { total:0, count:0 };
-        let sub=0, cnt=0;
-        s.entries.forEach(e=>{ sub += parseFloat(e.price)||0; cnt++; });
-        map[mk].total += sub; map[mk].count += cnt;
+        let subNet=0, cnt=0;
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          subNet += Math.max(price - discount, 0);
+          cnt++;
+        });
+        map[mk].total += subNet; map[mk].count += cnt;
       });
       return map;
     }
 
+    function summarizeYear(data){
+      const months = Array.from({length:12}, (_,i)=>({ total:0, count:0, discount:0 }));
+      let totalNet=0, totalCount=0, totalDiscount=0;
+
+      data.forEach(s=>{
+        const d = new Date(s.time);
+        const m = d.getMonth(); // 0..11
+        let subNet=0, subDisc=0, cnt=0;
+
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          const net = Math.max(price - discount, 0);
+          subNet += net; subDisc += discount; cnt++;
+        });
+
+        months[m].total += subNet;
+        months[m].discount += subDisc;
+        months[m].count += cnt;
+
+        totalNet += subNet; totalDiscount += subDisc; totalCount += cnt;
+      });
+
+      return { months, totalNet, totalDiscount, totalCount };
+    }
+
+    // --- Rendus UI ---
     function renderKPI(sum){
       const daysWithSales = Object.values(sum.byDay).filter(d=>d.total>0).length || 1;
-      els.kpiTotal.textContent = CHF(sum.totalSales);
-      els.kpiAvgDay.textContent = `Moyenne par jour (avec ventes): ${CHF(sum.totalSales/daysWithSales)}`;
+      els.kpiTotal.textContent = CHF(sum.totalNet);
+      els.kpiAvgDay.textContent = `Moyenne jour (jours avec ventes): ${CHF(sum.totalNet/daysWithSales)}`;
       els.kpiCount.textContent = sum.totalCount.toString();
-      els.kpiAvgTicket.textContent = `Ticket moyen: ${sum.totalCount? CHF(sum.totalSales/sum.totalCount): '—'}`;
+      els.kpiAvgTicket.textContent = `Ticket moyen NET: ${sum.totalCount? CHF(sum.totalNet/sum.totalCount): '—'}`;
+      els.kpiDiscount.textContent = CHF(sum.totalDiscount);
+      els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
     }
 
     function renderCalendar(sum, mkey){
       els.calendar.innerHTML = "";
+      if(!mkey){ return; }
       const [y,mo] = mkey.split("-").map(Number);
       const first = new Date(y, mo-1, 1);
       const last = new Date(y, mo, 0);
@@ -283,7 +371,7 @@
       }
     }
 
-    function renderBreakdown(containerList, counts, sums, totalSales){
+    function renderBreakdown(containerList, counts, sums, totalNet){
       const items = Object.keys(counts).map(k=>({
         name:k, count:counts[k], sum:sums[k]||0
       })).sort((a,b)=> b.sum - a.sum);
@@ -294,7 +382,7 @@
       items.forEach(i=>{
         const row = document.createElement('div');
         row.className = 'row';
-        const share = totalSales? (i.sum/totalSales*100):0;
+        const share = totalNet? (i.sum/totalNet*100):0;
         row.innerHTML = `
           <div class="name">${i.name}</div>
           <div class="nums"><strong>${i.count}</strong> <small>disques</small></div>
@@ -325,19 +413,50 @@
       });
     }
 
+    function renderYearKPI(ySum){
+      els.ykpiTotal.textContent = CHF(ySum.totalNet);
+      els.ykpiCount.textContent = ySum.totalCount.toString();
+      els.ykpiDiscount.textContent = CHF(ySum.totalDiscount);
+    }
+
+    function renderYearMonths(ySum, year){
+      els.yearMonthList.innerHTML = "";
+      const maxT = Math.max(1, ...ySum.months.map(m=>m.total));
+      ySum.months.forEach((m, idx)=>{
+        const mo = pad(idx+1);
+        const row = document.createElement('div');
+        row.className = 'month-row';
+        row.innerHTML = `
+          <div class="label">${mo}/${year}</div>
+          <div class="month-barwrap"><div class="month-bar" style="width:${(m.total/maxT*100).toFixed(0)}%"></div></div>
+          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(m.total)}</strong></div>
+        `;
+        els.yearMonthList.appendChild(row);
+      });
+    }
+
     function renderAll(){
-      const mkey = monthSelect.value;
+      const mkey = monthSelect.value || (snapshots[0] ? monthKeyFromDate(new Date(snapshots[0].time)) : "");
       const monthData = filterByMonth(mkey);
       const sum = summarizeMonth(monthData);
       renderKPI(sum);
       renderCalendar(sum, mkey);
-      renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalSales);
-      renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalSales);
+      renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
+      renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalNet);
       const allMonths = summarizeAllMonths();
       renderMonthComparison(allMonths);
+
+      const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
+      const yearData = filterByYear(year);
+      const ySum = summarizeYear(yearData);
+      renderYearKPI(ySum);
+      renderYearMonths(ySum, year);
     }
 
     monthSelect.addEventListener('change', renderAll);
+    yearSelect.addEventListener('change', renderAll);
+
+    // Initial render
     renderAll();
   </script>
 </body>
