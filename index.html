@@ -1,312 +1,463 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-  <title>Toutes les ventes</title>
+  <meta charset="utf-8" />
+  <title>Statistiques des ventes</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #2F4F2F;
-      min-height: 100vh;
+    :root{
+      --bg:#2F4F2F; --card:#fff; --ink:#111827; --muted:#6b7280;
+      --bar1:#60a5fa; --bar2:#f97316;
+      --heat0:#1f2937; --heat1:#134e4a; --heat2:#0ea5e9; --heat3:#f59e0b; --heat4:#ef4444;
     }
-    h1 { text-align: center; margin-bottom: 10px; color: white; }
-    .day-block { margin-bottom: 28px; }
-    .day-header {
-      color: #fff; font-weight: 700; margin: 12px 0 8px;
-      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    *{box-sizing:border-box}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      margin:0; padding:20px; background:var(--bg); color:#fff; min-height:100vh;
     }
-    .day-date { font-size: 1.05rem; }
-    .day-total { font-size: 1.05rem; color: #FFD166; white-space: nowrap; }
+    a.back-link{color:#f9a8d4; text-decoration:none; font-weight:600}
+    a.back-link:hover{text-decoration:underline}
+    h1{margin:10px 0 16px; text-align:center; color:#f9a8d4}
 
-    .snapshot {
-      background: white; padding: 15px 20px; border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 12px;
+    .controls{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; margin:20px 0 28px}
+    .controls label{color:#fff}
+    .controls select{
+      padding:10px 12px; border-radius:10px; border:none; font-size:14px; background:#fff; color:#111827; font-weight:600;
     }
-    .snapshot h2 { margin-top: 0; font-size: 1.05rem; color: #007AFF; display: inline-block; }
-    .delete-btn { float: right; background: none; border: none; color: red; font-weight: bold; cursor: pointer; }
-
-    .totals-line { font-weight: bold; text-align: right; margin-top: 10px; }
-    .total-global {
-      font-size: 1.1rem; color: white; text-align: center; margin-top: 10px; margin-bottom: 20px; font-weight: bold;
+    .section{margin-bottom:28px;}
+    .card{
+      background:var(--card); color:var(--ink);
+      border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.18);
     }
+    .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: center; }
-    th { background-color: #007AFF; color: white; }
+    .grid{display:grid; gap:20px}
+    .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:1100px){ .kpis{grid-template-columns:1fr 1fr} }
+    @media (max-width:900px){ .kpis,.two-col{grid-template-columns:1fr} }
 
-    a.back-link {
-      display: inline-block; margin-bottom: 10px; color: #007AFF;
-      text-decoration: none; font-weight: 600;
+    .kpi-value{font-size:30px; font-weight:900}
+    .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
+
+    /* calendrier */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
     }
-    a.back-link:hover { text-decoration: underline; }
-    .no-data { text-align: center; margin-top: 50px; color: #ccc; }
-
-    button#downloadCsv {
-      background-color: #007AFF; border: none; color: white; padding: 10px 18px;
-      font-size: 16px; border-radius: 6px; cursor: pointer; margin-bottom: 20px;
-      display: block; margin-left: auto; margin-right: auto; font-weight: 600; transition: background-color 0.3s ease; width: 180px;
+    .cal-head {
+      text-align: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #e5e7eb;
+      margin-bottom: 4px;
     }
-    button#downloadCsv:hover { background-color: #005bb5; }
-
-    select#monthFilter {
-      display: block; margin: 20px auto; padding: 6px 12px; font-size: 16px; border-radius: 6px;
+    .day {
+      background: var(--heat0);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      text-align: center;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      font-size: 12px;
     }
+    .day.empty { background: transparent; box-shadow: none; }
+    .day.no-sale { background: #374151; color: #9ca3af; }
+    .d {font-weight:900; font-size:16px}
+    .v {font-size:11px; color:#f1f5f9}
+    .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
+    .hint{color:#e5e7eb; font-size:12px; margin-top:8px}
+
+    .list{display:flex; flex-direction:column; gap:14px}
+    .row{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center}
+    .row .name{font-weight:800}
+    .row .nums{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+    .row .nums small{color:var(--muted)}
+    .barwrap{grid-column:1/-1; background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
+    .bar{height:100%; background:linear-gradient(90deg,var(--bar1),var(--bar2))}
+
+    .month-list{display:flex; flex-direction:column; gap:12px}
+    .month-row{display:grid; grid-template-columns:80px 1fr auto; gap:10px; align-items:center}
+    .month-row .label{font-weight:800}
+    .month-barwrap{background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
+    .month-bar{height:100%; background:linear-gradient(90deg,var(--bar2),var(--bar1))}
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-link">&larr; Retour à l'accueil</a> |
-  <a href="stats.html" class="back-link">📊 Voir Statistiques</a>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
+    <div class="left-nav">
+      <a href="index.html" class="back-link">&larr; Nouvelle vente</a> |
+      <a href="all.html" class="back-link">🧾 Toutes les ventes</a>
+    </div>
+  </div>
 
-  <h1>Toutes les ventes</h1>
+  <h1>Statistiques des ventes</h1>
 
-  <!-- Month selector -->
-  <select id="monthFilter">
-    <option value="all">Toutes les ventes</option>
-  </select>
+  <div class="controls">
+    <label for="monthSelect">Mois :</label>
+    <select id="monthSelect"></select>
 
-  <button id="downloadCsv">Download CSV</button>
+    <label for="yearSelect">Année :</label>
+    <select id="yearSelect"></select>
+  </div>
 
-  <!-- 🔝 Totaux généraux en haut -->
-  <div id="totalGlobal" class="total-global"></div>
+  <!-- KPIs (mois sélectionné) -->
+  <section class="section grid kpis">
+    <div class="card">
+      <h3>Total NET (après rabais)</h3>
+      <div class="kpi-value" id="kpiTotal">—</div>
+      <div class="kpi-sub" id="kpiAvgDay">—</div>
+    </div>
+    <div class="card">
+      <h3>Disques vendus</h3>
+      <div class="kpi-value" id="kpiCount">—</div>
+      <div class="kpi-sub" id="kpiAvgTicket">—</div>
+    </div>
+    <div class="card">
+      <h3>Rabais totaux</h3>
+      <div class="kpi-value" id="kpiDiscount">—</div>
+      <div class="kpi-sub" id="kpiAvgDiscount">—</div>
+    </div>
+  </section>
 
-  <!-- Ventes groupées par jour -->
-  <div id="snapshotsContainer"></div>
+  <!-- Calendrier (mois) -->
+  <section class="section card">
+    <h3>Ventes ce mois (calendrier) — montants nets</h3>
+    <div id="calendar" class="calendar"></div>
+    <div class="hint">Lun → Dim, jours sans ventes en gris.</div>
+  </section>
+
+  <!-- Breakdown (mois) -->
+  <section class="section grid two-col">
+    <div class="card">
+      <h3>Répartition par catégorie (NET)</h3>
+      <div id="catList" class="list"></div>
+    </div>
+    <div class="card">
+      <h3>Répartition par style (NET)</h3>
+      <div id="styleList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- Comparaison mensuelle (toutes périodes) -->
+  <section class="section card">
+    <h3>Comparaison par mois (toutes années, NET)</h3>
+    <div id="monthCompare" class="month-list"></div>
+  </section>
+
+  <!-- Vue annuelle -->
+  <section class="section grid two-col">
+    <div class="card">
+      <h3>Vue annuelle — KPI</h3>
+      <div class="grid kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+        <div>
+          <div class="kpi-sub">Total NET (après rabais)</div>
+          <div class="kpi-value" id="ykpiTotal">—</div>
+        </div>
+        <div>
+          <div class="kpi-sub">Disques vendus</div>
+          <div class="kpi-value" id="ykpiCount">—</div>
+        </div>
+        <div>
+          <div class="kpi-sub">Rabais totaux</div>
+          <div class="kpi-value" id="ykpiDiscount">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Année sélectionnée — récap par mois (NET)</h3>
+      <div id="yearMonthList" class="month-list"></div>
+    </div>
+  </section>
 
   <script>
-    const container = document.getElementById('snapshotsContainer');
-    const downloadBtn = document.getElementById('downloadCsv');
-    const totalGlobalDiv = document.getElementById('totalGlobal');
-    const monthFilter = document.getElementById('monthFilter');
+    const CHF = n => new Intl.NumberFormat('fr-CH',{style:'currency',currency:'CHF',maximumFractionDigits:2}).format(n);
+    const pad = n => String(n).padStart(2,'0');
+    const dayNames = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 
-    let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
+    const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
+    const monthSelect = document.getElementById("monthSelect");
+    const yearSelect  = document.getElementById("yearSelect");
 
-    const fmtCHF = (n) =>
-      new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 2 }).format(n);
+    const els = {
+      kpiTotal: document.getElementById("kpiTotal"),
+      kpiAvgDay: document.getElementById("kpiAvgDay"),
+      kpiCount: document.getElementById("kpiCount"),
+      kpiAvgTicket: document.getElementById("kpiAvgTicket"),
+      kpiDiscount: document.getElementById("kpiDiscount"),
+      kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
+      calendar: document.getElementById("calendar"),
+      catList: document.getElementById("catList"),
+      styleList: document.getElementById("styleList"),
+      monthCompare: document.getElementById("monthCompare"),
+      ykpiTotal: document.getElementById("ykpiTotal"),
+      ykpiCount: document.getElementById("ykpiCount"),
+      ykpiDiscount: document.getElementById("ykpiDiscount"),
+      yearMonthList: document.getElementById("yearMonthList"),
+    };
 
-    // Populate month selector
-    function populateMonthSelector() {
-      monthFilter.innerHTML = '<option value="all">Toutes les ventes</option>';
+    function monthKeyFromDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1); }
+    function toDayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+    function yearFromDate(d){ return d.getFullYear(); }
 
-      const monthsSet = new Set();
-      snapshots.forEach(snap => {
-        const d = new Date(snap.time);
-        const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-        monthsSet.add(monthKey);
+    // --- Peupler sélecteurs ---
+    (function populateSelectors(){
+      const monthSet = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
+      const months = Array.from(monthSet).sort().reverse();
+      monthSelect.innerHTML = "";
+      months.forEach(m=>{
+        const [y,mo] = m.split("-");
+        const op = document.createElement("option");
+        op.value = m; op.textContent = `${mo}/${y}`;
+        monthSelect.appendChild(op);
       });
 
-      const monthsArray = Array.from(monthsSet).sort((a,b) => b.localeCompare(a));
-      monthsArray.forEach(monthKey => {
-        const option = document.createElement('option');
-        const [year, month] = monthKey.split('-');
-        option.value = monthKey;
-        option.text = `Ventes de ${month}/${year}`;
-        monthFilter.appendChild(option);
+      const yearSet = new Set(snapshots.map(s => yearFromDate(new Date(s.time))));
+      const years = Array.from(yearSet).sort((a,b)=>b-a);
+      yearSelect.innerHTML = "";
+      years.forEach(y=>{
+        const op = document.createElement("option");
+        op.value = y; op.textContent = y;
+        yearSelect.appendChild(op);
       });
+    })();
+
+    function filterByMonth(mkey){
+      return snapshots.filter(s=> monthKeyFromDate(new Date(s.time)) === mkey );
+    }
+    function filterByYear(y){
+      return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
     }
 
-    function renderSnapshots() {
-      let filteredSnapshots = snapshots;
-      if (monthFilter.value !== 'all') {
-        filteredSnapshots = snapshots.filter(snap => {
-          const d = new Date(snap.time);
-          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-          return monthKey === monthFilter.value;
-        });
-      }
+    // --- Résumés (net et rabais) ---
+    function summarizeMonth(data){
+      const byDay = {};
+      const byCatC = {}, byCatS = {};
+      const byStyleC = {}, byStyleS = {};
+      let totalNet=0, totalCount=0, totalDiscount=0;
 
-      if (filteredSnapshots.length === 0) {
-        container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
-        downloadBtn.style.display = 'none';
-        totalGlobalDiv.textContent = '';
-        return;
-      }
+      data.forEach(s=>{
+        const d = new Date(s.time);
+        const dayKey = toDayKey(d);
+        let subNet=0, cnt=0;
 
-      downloadBtn.style.display = 'block';
-      container.innerHTML = '';
-
-      // Grouper par jour et calculer totaux
-      const byDay = {}; // { 'YYYY-MM-DD': { net: number, tips: number, count: number, items: [...] } }
-      let grandNet = 0, grandTips = 0;
-
-      filteredSnapshots.forEach((snapshot) => {
-        const d = new Date(snapshot.time);
-        const dayKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
-
-        let subNet = 0;
-        let subTips = 0;
-        let cnt = 0;
-
-        snapshot.entries.forEach(e => {
-          const price = parseFloat(e.price) || 0;
-          const discount = parseFloat(e.discount) || 0;
-          const tip = parseFloat(e.tip) || 0; // 🆕 pourboires
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
           const net = Math.max(price - discount, 0);
-          subNet += net;
-          subTips += tip;
-          cnt += 1;
+          const cat = e.category || "—";
+          const st = e.style || "—";
+
+          totalNet += net; totalDiscount += discount; totalCount++;
+          subNet += net; cnt++;
+
+          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+net;
+          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+net;
         });
 
-        if (!byDay[dayKey]) byDay[dayKey] = { net: 0, tips: 0, count: 0, items: [] };
-        byDay[dayKey].net += subNet;
-        byDay[dayKey].tips += subTips;
-        byDay[dayKey].count += cnt;
-        byDay[dayKey].items.push({ snapshot, subNet, subTips, count: cnt });
-
-        grandNet += subNet;
-        grandTips += subTips;
+        if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0 };
+        byDay[dayKey].total+=subNet; byDay[dayKey].count+=cnt;
       });
 
-      // 🔝 Totaux généraux
-      totalGlobalDiv.textContent =
-        `Total général — Produits NET: ${fmtCHF(grandNet)} | Pourboires: ${fmtCHF(grandTips)} | Encaisse: ${fmtCHF(grandNet + grandTips)}`;
+      return { totalNet, totalCount, totalDiscount, byDay, byCatC, byCatS, byStyleC, byStyleS };
+    }
 
-      // Afficher chaque jour
-      const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a)); // récents d’abord
+    function summarizeAllMonths(){
+      const map = {};
+      snapshots.forEach(s=>{
+        const mk = monthKeyFromDate(new Date(s.time));
+        map[mk] = map[mk] || { total:0, count:0 };
+        let subNet=0, cnt=0;
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          subNet += Math.max(price - discount, 0);
+          cnt++;
+        });
+        map[mk].total += subNet; map[mk].count += cnt;
+      });
+      return map;
+    }
 
-      sortedDays.forEach(dayKey => {
-        const dayBlock = document.createElement('div');
-        dayBlock.className = 'day-block';
+    function summarizeYear(data){
+      const months = Array.from({length:12}, (_,i)=>({ total:0, count:0, discount:0 }));
+      let totalNet=0, totalCount=0, totalDiscount=0;
 
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'day-header';
-        const dateParts = dayKey.split('-');
-        const niceDate = new Date(`${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00`);
-        const dateLabel = niceDate.toLocaleDateString('fr-CH', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+      data.forEach(s=>{
+        const d = new Date(s.time);
+        const m = d.getMonth(); // 0..11
+        let subNet=0, subDisc=0, cnt=0;
 
-        dayHeader.innerHTML = `
-          <span class="day-date">${dateLabel}</span>
-          <span class="day-total">
-            Total du jour : ${byDay[dayKey].count} disques — NET ${fmtCHF(byDay[dayKey].net)} | Tips ${fmtCHF(byDay[dayKey].tips)} | Encaisse ${fmtCHF(byDay[dayKey].net + byDay[dayKey].tips)}
-          </span>
-        `;
-        dayBlock.appendChild(dayHeader);
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          const net = Math.max(price - discount, 0);
+          subNet += net; subDisc += discount; cnt++;
+        });
 
-        // lister les snapshots du jour (ordre antéchronologique)
-        byDay[dayKey].items.sort((a, b) => new Date(b.snapshot.time) - new Date(a.snapshot.time));
+        months[m].total += subNet;
+        months[m].discount += subDisc;
+        months[m].count += cnt;
 
-        byDay[dayKey].items.forEach(({ snapshot, subNet, subTips, count }) => {
-          const snapshotDiv = document.createElement('div');
-          snapshotDiv.className = 'snapshot';
+        totalNet += subNet; totalDiscount += subDisc; totalCount += cnt;
+      });
 
-          const date = new Date(snapshot.time);
-          const formattedDate = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // heure seulement
+      return { months, totalNet, totalDiscount, totalCount };
+    }
 
-          snapshotDiv.innerHTML = `
-            <h2>${formattedDate}</h2>
-            <button class="delete-btn" onclick="deleteSnapshot(${snapshots.indexOf(snapshot)})">🗑️ Supprimer</button>
+    // --- Rendus UI ---
+    function renderKPI(sum){
+      const daysWithSales = Object.values(sum.byDay).filter(d=>d.total>0).length || 1;
+      els.kpiTotal.textContent = CHF(sum.totalNet);
+      els.kpiAvgDay.textContent = `Moyenne jour (jours avec ventes): ${CHF(sum.totalNet/daysWithSales)}`;
+      els.kpiCount.textContent = sum.totalCount.toString();
+      els.kpiAvgTicket.textContent = `Ticket moyen NET: ${sum.totalCount? CHF(sum.totalNet/sum.totalCount): '—'}`;
+      els.kpiDiscount.textContent = CHF(sum.totalDiscount);
+      els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
+    }
+
+    function renderCalendar(sum, mkey){
+      els.calendar.innerHTML = "";
+      if(!mkey){ return; }
+      const [y,mo] = mkey.split("-").map(Number);
+      const first = new Date(y, mo-1, 1);
+      const last = new Date(y, mo, 0);
+
+      // En-têtes
+      dayNames.forEach(dn=>{
+        const head = document.createElement("div");
+        head.className = "cal-head";
+        head.textContent = dn;
+        els.calendar.appendChild(head);
+      });
+
+      // Cases vides avant le 1er
+      let startDay = (first.getDay()+6)%7; // lundi=0
+      for(let i=0;i<startDay;i++){
+        const empty = document.createElement("div");
+        empty.className="day empty";
+        els.calendar.appendChild(empty);
+      }
+
+      // max pour intensité
+      const totals = Object.values(sum.byDay).map(d=>d.total);
+      const max = Math.max(1, ...totals);
+
+      for(let day=1; day<=last.getDate(); day++){
+        const d = new Date(y, mo-1, day);
+        const key = toDayKey(d);
+        const info = sum.byDay[key] || {total:0, count:0};
+        const ratio = info.total/max;
+        const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
+
+        const box = document.createElement("div");
+        if(info.total===0){
+          box.className="day no-sale";
+          box.innerHTML = `<div class="d">${day}</div><div class="v">0</div>`;
+        } else {
+          box.className = `day lv${lv}`;
+          box.title = `${key} • ${info.count} disques — ${CHF(info.total)}`;
+          box.innerHTML = `
+            <div class="d">${day}</div>
+            <div class="v">${info.count} | ${CHF(info.total)}</div>
           `;
+        }
+        els.calendar.appendChild(box);
+      }
+    }
 
-          const table = document.createElement('table');
-          const thead = document.createElement('thead');
-          thead.innerHTML = `
-            <tr>
-              <th>Category</th>
-              <th>Style</th>
-              <th>Prix (CHF)</th>
-              <th>Rabais (CHF)</th>
-              <th>Pourboires (CHF)</th>
-              <th>Net (CHF)</th>
-            </tr>`;
-          table.appendChild(thead);
+    function renderBreakdown(containerList, counts, sums, totalNet){
+      const items = Object.keys(counts).map(k=>({
+        name:k, count:counts[k], sum:sums[k]||0
+      })).sort((a,b)=> b.sum - a.sum);
 
-          const tbody = document.createElement('tbody');
+      containerList.innerHTML = "";
+      const maxSum = Math.max(1, ...items.map(i=>i.sum));
 
-          snapshot.entries.forEach(entry => {
-            const price = parseFloat(entry.price) || 0;
-            const discount = parseFloat(entry.discount) || 0;
-            const tip = parseFloat(entry.tip) || 0;
-            const net = Math.max(price - discount, 0);
-            const row = document.createElement('tr');
-            row.innerHTML =
-              `<td>${entry.category}</td>
-               <td>${entry.style || ''}</td>
-               <td>${price.toFixed(2)}</td>
-               <td>${discount.toFixed(2)}</td>
-               <td>${tip.toFixed(2)}</td>
-               <td>${net.toFixed(2)}</td>`;
-            tbody.appendChild(row);
-          });
+      items.forEach(i=>{
+        const row = document.createElement('div');
+        row.className = 'row';
+        const share = totalNet? (i.sum/totalNet*100):0;
+        row.innerHTML = `
+          <div class="name">${i.name}</div>
+          <div class="nums"><strong>${i.count}</strong> <small>disques</small></div>
+          <div class="nums"><strong>${CHF(i.sum)}</strong> <small>${share.toFixed(1)}%</small></div>
+          <div class="barwrap"><div class="bar" style="width:${(i.sum/maxSum*100).toFixed(0)}%"></div></div>
+        `;
+        containerList.appendChild(row);
+      });
+      if(!items.length){
+        containerList.innerHTML = `<div style="color:var(--muted)">Aucune donnée.</div>`;
+      }
+    }
 
-          table.appendChild(tbody);
-          snapshotDiv.appendChild(table);
-
-          const totalEl = document.createElement('div');
-          totalEl.className = 'totals-line';
-          totalEl.textContent = `Total snapshot — NET: ${fmtCHF(subNet)} | Tips: ${fmtCHF(subTips)} | Encaisse: ${fmtCHF(subNet + subTips)} ( ${count} disques )`;
-          snapshotDiv.appendChild(totalEl);
-
-          dayBlock.appendChild(snapshotDiv);
-        });
-
-        container.appendChild(dayBlock);
+    function renderMonthComparison(map){
+      const entries = Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
+      const maxT = Math.max(1, ...entries.map(([_,v])=>v.total));
+      els.monthCompare.innerHTML = "";
+      entries.forEach(([mk, v])=>{
+        const [y,mo] = mk.split("-");
+        const row = document.createElement('div');
+        row.className = 'month-row';
+        row.innerHTML = `
+          <div class="label">${mo}/${y}</div>
+          <div class="month-barwrap"><div class="month-bar" style="width:${(v.total/maxT*100).toFixed(0)}%"></div></div>
+          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(v.total)}</strong></div>
+        `;
+        els.monthCompare.appendChild(row);
       });
     }
 
-    function deleteSnapshot(index) {
-      if (confirm("Supprimer cette vente ?")) {
-        snapshots.splice(index, 1);
-        localStorage.setItem('savedSnapshots', JSON.stringify(snapshots));
-        populateMonthSelector();
-        renderSnapshots();
-      }
+    function renderYearKPI(ySum){
+      els.ykpiTotal.textContent = CHF(ySum.totalNet);
+      els.ykpiCount.textContent = ySum.totalCount.toString();
+      els.ykpiDiscount.textContent = CHF(ySum.totalDiscount);
     }
 
-    function generateFilename() {
-      const now = new Date();
-      const pad = n => n.toString().padStart(2, '0');
-      const y = now.getFullYear(), m = pad(now.getMonth() + 1), d = pad(now.getDate());
-      const hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
-      return `ventes_${y}${m}${d}_${hh}${mm}${ss}.csv`;
-    }
-
-    function downloadCSV(filename = generateFilename()) {
-      let filteredSnapshots = snapshots;
-      if (monthFilter.value !== 'all') {
-        filteredSnapshots = snapshots.filter(snap => {
-          const d = new Date(snap.time);
-          const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-          return monthKey === monthFilter.value;
-        });
-      }
-
-      if (filteredSnapshots.length === 0) return;
-
-      // CSV avec rabais et pourboires
-      let csvContent = 'Time,Category,Style,Price (CHF),Discount (CHF),Tip (CHF),Net (CHF)\n';
-      filteredSnapshots.forEach(snapshot => {
-        const date = new Date(snapshot.time).toLocaleString('fr-CH');
-        snapshot.entries.forEach(entry => {
-          const price = +entry.price || 0;
-          const discount = +entry.discount || 0;
-          const tip = +entry.tip || 0;
-          const net = Math.max(price - discount, 0);
-          const category = `"${entry.category}"`;
-          const style = `"${entry.style || ''}"`;
-          csvContent += `${date},${category},${style},${price},${discount},${tip},${net}\n`;
-        });
+    function renderYearMonths(ySum, year){
+      els.yearMonthList.innerHTML = "";
+      const maxT = Math.max(1, ...ySum.months.map(m=>m.total));
+      ySum.months.forEach((m, idx)=>{
+        const mo = pad(idx+1);
+        const row = document.createElement('div');
+        row.className = 'month-row';
+        row.innerHTML = `
+          <div class="label">${mo}/${year}</div>
+          <div class="month-barwrap"><div class="month-bar" style="width:${(m.total/maxT*100).toFixed(0)}%"></div></div>
+          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(m.total)}</strong></div>
+        `;
+        els.yearMonthList.appendChild(row);
       });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
-        const file = new File([blob], filename, { type: 'text/csv' });
-        navigator.share({ files: [file] }).catch(err => {
-          console.warn('Partage annulé ou non supporté :', err);
-        });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename;
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(url);
-      }
     }
 
-    monthFilter.addEventListener('change', renderSnapshots);
-    downloadBtn.addEventListener('click', () => downloadCSV());
+    function renderAll(){
+      const mkey = monthSelect.value || (snapshots[0] ? monthKeyFromDate(new Date(snapshots[0].time)) : "");
+      const monthData = filterByMonth(mkey);
+      const sum = summarizeMonth(monthData);
+      renderKPI(sum);
+      renderCalendar(sum, mkey);
+      renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
+      renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalNet);
+      const allMonths = summarizeAllMonths();
+      renderMonthComparison(allMonths);
 
-    populateMonthSelector();
-    renderSnapshots();
+      const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
+      const yearData = filterByYear(year);
+      const ySum = summarizeYear(yearData);
+      renderYearKPI(ySum);
+      renderYearMonths(ySum, year);
+    }
+
+    monthSelect.addEventListener('change', renderAll);
+    yearSelect.addEventListener('change', renderAll);
+
+    // Initial render
+    renderAll();
   </script>
 </body>
 </html>
