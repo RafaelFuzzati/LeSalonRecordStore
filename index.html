@@ -106,9 +106,27 @@
       margin-bottom: 20px;
       transition: background-color 0.3s ease;
     }
+    .sidebar button:hover { background-color: #cc3027; }
 
-    .sidebar button:hover {
-      background-color: #cc3027;
+    .sidebar .field {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 0 6px;
+    }
+    .sidebar label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .sidebar input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
     }
 
     .sum-box {
@@ -137,10 +155,7 @@
       margin-top: 10px;
       transition: background-color 0.3s ease;
     }
-
-    a.saved-link:hover, a.stats-link:hover {
-      background-color: #005bb5;
-    }
+    a.saved-link:hover, a.stats-link:hover { background-color: #005bb5; }
   </style>
 </head>
 <body>
@@ -154,7 +169,7 @@
             <th>Category</th>
             <th>Style</th>
             <th>Price per Unit</th>
-            <th>Rabais (CHF)</th><!-- 🆕 -->
+            <th>Rabais (CHF)</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -167,10 +182,18 @@
 
     <div class="sidebar">
       <button id="resetBtn">Reset Table</button>
+
+      <!-- 🆕 Pourboire -->
+      <div class="field">
+        <label for="tipInput">Pourboire (CHF)</label>
+        <input id="tipInput" type="number" min="0" max="50" step="1" value="0" />
+      </div>
+
       <div class="sum-box">
-        Total Price:<br />
+        Total (CHF):<br />
         <span id="totalPrice">0</span>
       </div>
+
       <a href="saved.html" class="saved-link">Toutes les ventes</a>
       <a href="stats.html" class="stats-link">📊 Statistiques</a>
     </div>
@@ -178,13 +201,14 @@
 
   <script>
     const categories = ['Neuf', 'Occasion', 'Bar', 'Autres'];
-    const styles = ['3CHF','Extra-EU', 'French/Recording','Hip-Hop', 'Electronic', 'Reggae/Dub', 'Rock', 'Jazz/Blues/Funk', 'Wave','Cassettes','T-shirt','Coffe'];
+    const styles = ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave','Cassettes','T-shirt','Coffe'];
     const maxRows = 20;
 
     const tableBody = document.getElementById('tableBody');
     const totalPriceSpan = document.getElementById('totalPrice');
     const resetBtn = document.getElementById('resetBtn');
     const addRowBtn = document.getElementById('addRowBtn');
+    const tipInput = document.getElementById('tipInput'); // 🆕
 
     function makePlaceholderOption() {
       const opt = document.createElement('option');
@@ -198,7 +222,7 @@
     function createRow() {
       const row = document.createElement('tr');
 
-      // Category cell
+      // Category
       const categoryCell = document.createElement('td');
       const categorySelect = document.createElement('select');
       categorySelect.appendChild(makePlaceholderOption());
@@ -211,7 +235,7 @@
       categoryCell.appendChild(categorySelect);
       row.appendChild(categoryCell);
 
-      // Style cell
+      // Style
       const styleCell = document.createElement('td');
       const styleSelect = document.createElement('select');
       styleSelect.appendChild(makePlaceholderOption());
@@ -224,7 +248,7 @@
       styleCell.appendChild(styleSelect);
       row.appendChild(styleCell);
 
-      // Price cell
+      // Price
       const priceCell = document.createElement('td');
       const priceSelect = document.createElement('select');
       priceSelect.appendChild(makePlaceholderOption());
@@ -237,7 +261,7 @@
       priceCell.appendChild(priceSelect);
       row.appendChild(priceCell);
 
-      // Rabais cell (0 → 10 CHF)  🆕
+      // Rabais (0 → 10)
       const discountCell = document.createElement('td');
       const discountSelect = document.createElement('select');
       discountSelect.appendChild(makePlaceholderOption());
@@ -250,60 +274,58 @@
       discountCell.appendChild(discountSelect);
       row.appendChild(discountCell);
 
-      // Listeners to update total when price or discount changes
+      // Update total when price/discount changes
       priceSelect.addEventListener('change', updateTotal);
       discountSelect.addEventListener('change', updateTotal);
 
       return row;
     }
 
-    // Generate initial rows
+    // Initial rows
     for (let i = 0; i < maxRows; i++) {
       tableBody.appendChild(createRow());
     }
 
-    function updateTotal() {
-      let total = 0;
+    function computeSubtotalNet(){
+      let subtotal = 0;
       const rows = tableBody.querySelectorAll('tr');
       rows.forEach(row => {
-        const priceSelect = row.cells[2].querySelector('select');    // Price column
-        const discountSelect = row.cells[3].querySelector('select'); // Rabais column
+        const priceSelect = row.cells[2].querySelector('select');    // Price
+        const discountSelect = row.cells[3].querySelector('select'); // Rabais
         if (priceSelect && priceSelect.value) {
           const price = Number(priceSelect.value);
           const discount = discountSelect && discountSelect.value ? Number(discountSelect.value) : 0;
-          // Empêche le total négatif au cas où
-          total += Math.max(price - discount, 0);
+          subtotal += Math.max(price - discount, 0);
         }
       });
+      return subtotal;
+    }
+
+    function updateTotal() {
+      const tip = Number(tipInput.value) || 0;
+      const total = computeSubtotalNet() + tip;
       totalPriceSpan.textContent = total;
     }
 
-    resetBtn.addEventListener('click', () => {
-      saveSnapshot();
-      const rows = tableBody.querySelectorAll('tr');
-      rows.forEach(row => {
-        row.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
-      });
-      updateTotal();
-    });
-
+    // Save current snapshot (with tip)
     function saveSnapshot() {
       const rows = tableBody.querySelectorAll('tr');
       let snapshot = {
         time: new Date().toISOString(),
+        tip: Number(tipInput.value) || 0, // 🆕 pourboire au niveau du snapshot
         entries: []
       };
       rows.forEach(row => {
         const categorySelect = row.cells[0].querySelector('select');
         const styleSelect = row.cells[1].querySelector('select');
         const priceSelect = row.cells[2].querySelector('select');
-        const discountSelect = row.cells[3].querySelector('select'); // 🆕
+        const discountSelect = row.cells[3].querySelector('select');
         if (categorySelect.value && styleSelect.value && priceSelect.value) {
           snapshot.entries.push({
             category: categorySelect.value,
             style: styleSelect.value,
             price: Number(priceSelect.value),
-            discount: discountSelect && discountSelect.value ? Number(discountSelect.value) : 0 // 🆕
+            discount: discountSelect && discountSelect.value ? Number(discountSelect.value) : 0
           });
         }
       });
@@ -313,12 +335,26 @@
       localStorage.setItem('savedSnapshots', JSON.stringify(savedSnapshots));
     }
 
+    // Listeners
+    tipInput.addEventListener('input', updateTotal); // 🆕
+
+    resetBtn.addEventListener('click', () => {
+      saveSnapshot();
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(row => {
+        row.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+      });
+      tipInput.value = 0; // reset du pourboire
+      updateTotal();
+    });
+
     addRowBtn.addEventListener('click', () => {
       for (let i = 0; i < 10; i++) {
         tableBody.appendChild(createRow());
       }
     });
 
+    // Initial calc
     updateTotal();
   </script>
 
