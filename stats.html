@@ -37,7 +37,6 @@
     .kpi-value{font-size:30px; font-weight:900}
     .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
 
-    /* calendrier */
     .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
     .cal-head { text-align: center; font-weight: 700; font-size: 12px; color: #e5e7eb; margin-bottom: 4px; }
     .day { background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center; min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px; }
@@ -67,8 +66,10 @@
 <body>
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
     <div class="left-nav">
-      <a href="index.html" class="back-link">&larr; Nouvelle vente</a> |
-      <a href="all.html" class="back-link">🧾 Toutes les ventes</a>
+      <!-- ✅ liens corrigés -->
+      <a href="./index.html" class="back-link">&larr; Nouvelle vente</a> |
+      <a href="./saved.html" class="back-link">🧾 Toutes les ventes</a>
+      <!-- Si ton fichier s'appelle all.html, remplace "./saved.html" par "./all.html" -->
     </div>
   </div>
 
@@ -144,7 +145,6 @@
     const yearLabel   = document.querySelector(".year-label");
 
     const els = {
-      // KPI
       kpiSection: document.getElementById("kpiSection"),
       kpiTotal: document.getElementById("kpiTotal"),
       kpiAvgDay: document.getElementById("kpiAvgDay"),
@@ -152,15 +152,12 @@
       kpiAvgTicket: document.getElementById("kpiAvgTicket"),
       kpiDiscount: document.getElementById("kpiDiscount"),
       kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
-      // Calendar
       calendarSection: document.getElementById("calendarSection"),
       calendar: document.getElementById("calendar"),
-      // Lists
       catTitle: document.getElementById("catTitle"),
       styleTitle: document.getElementById("styleTitle"),
       catList: document.getElementById("catList"),
       styleList: document.getElementById("styleList"),
-      // Compare section
       compareSection: document.getElementById("compareSection"),
       compareTitle: document.getElementById("compareTitle"),
       monthCompare: document.getElementById("monthCompare"),
@@ -170,7 +167,6 @@
     function toDayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
     function yearFromDate(d){ return d.getFullYear(); }
 
-    // --- Peupler sélecteurs ---
     (function populateSelectors(){
       const monthSet = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
       const months = Array.from(monthSet).sort().reverse();
@@ -199,7 +195,6 @@
       return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
     }
 
-    // --- Résumés (NET et rabais) ---
     function summarizeMonth(data){
       const byDay = {};
       const byCatC = {}, byCatS = {};
@@ -262,7 +257,6 @@
       return { months, totalNet, byCatC, byCatS, byStyleC, byStyleS };
     }
 
-    // --- Rendus UI ---
     function renderKPI(sum){
       const daysWithSales = Object.values(sum.byDay).filter(d=>d.total>0).length || 1;
       els.kpiTotal.textContent = CHF(sum.totalNet);
@@ -358,29 +352,22 @@
       });
     }
 
-    function summarizeAllMonths(){ /* non utilisé en mode mois (on masque compare), mais conservé si besoin futur */ }
-
-    // --- Mode / affichage ---
     function updateVisibility(period){
       const showMonth = period === 'month';
-      // Toggle inputs
       monthSelect.style.display = showMonth ? '' : 'none';
       document.querySelector('label[for="monthSelect"]').style.display = showMonth ? '' : 'none';
       yearSelect.style.display = showMonth ? 'none' : '';
       yearLabel.style.display = showMonth ? 'none' : '';
-      // Sections
       els.kpiSection.style.display = showMonth ? '' : 'none';
       els.calendarSection.style.display = showMonth ? '' : 'none';
-      // Comparaison n'apparaît qu'en année
       els.compareSection.style.display = showMonth ? 'none' : '';
-      // Titles
       els.catTitle.textContent = showMonth ? 'Répartition par catégorie (NET — mois)' : 'Répartition par catégorie (NET — année)';
       els.styleTitle.textContent = showMonth ? 'Répartition par style (NET — mois)' : 'Répartition par style (NET — année)';
       els.compareTitle.textContent = 'Mois de l’année sélectionnée (NET)';
     }
 
     function renderAll(){
-      const period = periodInputs.find(i=>i.checked).value;
+      const period = document.querySelector('input[name="period"]:checked').value;
       updateVisibility(period);
 
       if(period === 'month'){
@@ -391,24 +378,20 @@
         renderCalendar(sum, mkey);
         renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
         renderBreakdown(els.styleList, sum.byStyleC, sum.byStyleS, sum.totalNet);
-        // Pas de comparaison en mode Mois (section masquée)
       } else {
         const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
         const yearData = filterByYear(year);
         const ySum = summarizeYear(yearData);
-        // Pas de KPI annuel, pas de calendrier.
         renderBreakdown(els.catList, ySum.byCatC, ySum.byCatS, ySum.totalNet);
         renderBreakdown(els.styleList, ySum.byStyleC, ySum.byStyleS, ySum.totalNet);
-        renderMonthComparisonForYear(ySum, year); // visible seulement en mode Année
+        renderMonthComparisonForYear(ySum, year);
       }
     }
 
-    // Listeners
     monthSelect.addEventListener('change', renderAll);
     yearSelect.addEventListener('change', renderAll);
-    periodInputs.forEach(i => i.addEventListener('change', renderAll));
+    document.querySelectorAll('input[name="period"]').forEach(i => i.addEventListener('change', renderAll));
 
-    // Initial render
     renderAll();
   </script>
 </body>
