@@ -30,9 +30,9 @@
     .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
 
     .grid{display:grid; gap:20px}
-    .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .kpis{grid-template-columns:repeat(auto-fit, minmax(220px, 1fr))}
     .two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media (max-width:1100px){ .kpis{grid-template-columns:1fr 1fr} }
+    @media (max-width:1100px){ .kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))} }
     @media (max-width:900px){ .kpis,.two-col{grid-template-columns:1fr} }
 
     .kpi-value{font-size:30px; font-weight:900}
@@ -49,7 +49,7 @@
     .cal-head.total-head { text-align:center; }
     .day {
       background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center;
-      min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px;
+      min-height: 90px; display: flex; flex-direction: column; justify-content: center; gap: 3px; font-size: 12px;
     }
     .day.empty { background: transparent; box-shadow: none; }
     .day.no-sale { background: #374151; color: #9ca3af; }
@@ -58,7 +58,7 @@
     .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
     .week-total{
       background:#111827; color:#fff; border-radius:10px; padding:8px; text-align:center;
-      min-height:70px; display:flex; flex-direction:column; justify-content:center; gap:4px; font-size:12px; font-weight:800;
+      min-height:90px; display:flex; flex-direction:column; justify-content:center; gap:4px; font-size:12px; font-weight:800;
     }
     .week-total .v { font-size:11px; color:#f1f5f9; font-weight:600; }
     .hint{color:#e5e7eb; font-size:12px; margin-top:8px}
@@ -122,6 +122,11 @@
       <div class="kpi-value" id="kpiDiscount">—</div>
       <div class="kpi-sub" id="kpiAvgDiscount">—</div>
     </div>
+    <div class="card">
+      <h3>Pourboires totaux</h3>
+      <div class="kpi-value" id="kpiTip">—</div>
+      <div class="kpi-sub" id="kpiAvgTip">—</div>
+    </div>
   </section>
 
   <section id="calendarSection" class="section card">
@@ -165,6 +170,8 @@
       kpiAvgTicket: document.getElementById("kpiAvgTicket"),
       kpiDiscount: document.getElementById("kpiDiscount"),
       kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
+      kpiTip: document.getElementById("kpiTip"),
+      kpiAvgTip: document.getElementById("kpiAvgTip"),
       calendarSection: document.getElementById("calendarSection"),
       calendar: document.getElementById("calendar"),
       catTitle: document.getElementById("catTitle"),
@@ -208,7 +215,6 @@
       return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
     }
 
-    // distribution du net sur chaque ligne pour les répartitions
     function distributeNet(snapshot){
       const discount = Number(snapshot.discount) || 0;
       const tip = Number(snapshot.tip) || 0;
@@ -223,7 +229,7 @@
       const byCatC = {}, byCatS = {};
       const byStyleC = {}, byStyleS = {};
       const byStyleSplitC = {}, byStyleSplitS = {};
-      let totalNet=0, totalCount=0, totalDiscount=0;
+      let totalNet=0, totalCount=0, totalDiscount=0, totalTip=0;
 
       data.forEach(s=>{
         const d = new Date(s.time);
@@ -232,12 +238,15 @@
 
         totalNet += netTotal;
         totalDiscount += discount;
+        totalTip += tip;
         const countSnapshot = s.entries.length;
         totalCount += countSnapshot;
 
-        if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0 };
+        if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0, discount:0, tip:0 };
         byDay[dayKey].total += netTotal;
         byDay[dayKey].count += countSnapshot;
+        byDay[dayKey].discount += discount;
+        byDay[dayKey].tip += tip;
 
         s.entries.forEach(e=>{
           const price = Number(e.price)||0;
@@ -256,7 +265,7 @@
         });
       });
 
-      return { totalNet, totalCount, totalDiscount, byDay, byCatC, byCatS, byStyleC, byStyleS, byStyleSplitC, byStyleSplitS };
+      return { totalNet, totalCount, totalDiscount, totalTip, byDay, byCatC, byCatS, byStyleC, byStyleS, byStyleSplitC, byStyleSplitS };
     }
 
     function summarizeYear(data){
@@ -301,6 +310,8 @@
       els.kpiAvgTicket.textContent = `Ticket moyen NET: ${sum.totalCount? CHF(sum.totalNet/sum.totalCount): '—'}`;
       els.kpiDiscount.textContent = CHF(sum.totalDiscount);
       els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
+      els.kpiTip.textContent = CHF(sum.totalTip);
+      els.kpiAvgTip.textContent = sum.totalCount ? `Pourboire moyen / disque: ${CHF(sum.totalTip/sum.totalCount)}` : '—';
     }
 
     function renderCalendar(sum, mkey){
@@ -327,6 +338,8 @@
       let dow = (first.getDay()+6)%7;
       let weekSum = 0;
       let weekCount = 0;
+      let weekDiscount = 0;
+      let weekTip = 0;
 
       for(let i=0;i<dow;i++){
         const empty = document.createElement("div");
@@ -337,23 +350,30 @@
       for(let day=1; day<=last.getDate(); day++){
         const d = new Date(y, mo-1, day);
         const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-        const info = sum.byDay[key] || {total:0, count:0};
+        const info = sum.byDay[key] || {total:0, count:0, discount:0, tip:0};
         const ratio = info.total/max;
         const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
 
         const box = document.createElement("div");
         if(info.total===0){
           box.className="day no-sale";
-          box.innerHTML = `<div class="d">${day}</div><div class="v">0</div>`;
+          box.innerHTML = `<div class="d">${day}</div><div class="v">0</div><div class="v">Rabais: 0</div><div class="v">Pourb.: 0</div>`;
         } else {
           box.className = `day lv${lv}`;
-          box.title = `${key} • ${info.count} disques — ${CHF(info.total)}`;
-          box.innerHTML = `<div class="d">${day}</div><div class="v">${info.count} | ${CHF(info.total)}</div>`;
+          box.title = `${key} • ${info.count} disques — Net ${CHF(info.total)} | Rabais ${CHF(info.discount)} | Pourboire ${CHF(info.tip)}`;
+          box.innerHTML = `
+            <div class="d">${day}</div>
+            <div class="v">${info.count} | ${CHF(info.total)}</div>
+            <div class="v">Rabais: ${CHF(info.discount)}</div>
+            <div class="v">Pourb.: ${CHF(info.tip)}</div>
+          `;
         }
         els.calendar.appendChild(box);
 
         weekSum += info.total;
         weekCount += info.count;
+        weekDiscount += info.discount;
+        weekTip += info.tip;
 
         const isWeekEnd = dow === 6;
         const isMonthEnd = day === last.getDate();
@@ -367,12 +387,19 @@
           }
           const wk = document.createElement("div");
           wk.className = "week-total";
-          wk.title = `Semaine • ${weekCount} disques — ${CHF(weekSum)}`;
-          wk.innerHTML = `<div>Total</div><div class="v">${weekCount} | ${CHF(weekSum)}</div>`;
+          wk.title = `Semaine • ${weekCount} disques — Net ${CHF(weekSum)} | Rabais ${CHF(weekDiscount)} | Pourboire ${CHF(weekTip)}`;
+          wk.innerHTML = `
+            <div>Total</div>
+            <div class="v">${weekCount} | ${CHF(weekSum)}</div>
+            <div class="v">Rabais: ${CHF(weekDiscount)}</div>
+            <div class="v">Pourb.: ${CHF(weekTip)}</div>
+          `;
           els.calendar.appendChild(wk);
 
           weekSum = 0;
           weekCount = 0;
+          weekDiscount = 0;
+          weekTip = 0;
         }
         dow = (dow + 1) % 7;
       }
