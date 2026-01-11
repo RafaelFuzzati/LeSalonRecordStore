@@ -284,10 +284,8 @@
           const breakdown = document.createElement('div');
           breakdown.className = 'breakdown';
           breakdown.innerHTML = `
-            Brut: <strong>${fmtCHF(gross)}</strong><br>
             Rabais: <strong>- ${fmtCHF(discount)}</strong><br>
             Pourboire: <strong>+ ${fmtCHF(tip)}</strong><br>
-            Net: <strong>${fmtCHF(net)}</strong>
           `;
           snapshotDiv.appendChild(breakdown);
 
