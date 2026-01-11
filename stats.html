@@ -1,51 +1,520 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<title>Statistiques</title>
-<style>
-body{font-family:system-ui;background:#2F4F2F;color:#fff;padding:20px}
-.card{background:#fff;color:#000;border-radius:12px;padding:14px;margin-bottom:12px}
-.bar{height:10px;background:#60a5fa;border-radius:999px}
-</style>
+  <meta charset="utf-8" />
+  <title>Statistiques des ventes</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#2F4F2F; --card:#fff; --ink:#111827; --muted:#6b7280;
+      --bar1:#60a5fa; --bar2:#f97316;
+      --heat0:#1f2937; --heat1:#134e4a; --heat2:#0ea5e9; --heat3:#f59e0b; --heat4:#ef4444;
+      --pill-neuf:#10b981; --pill-occ:#6366f1; --pill-aut:#9ca3af;
+    }
+    *{box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0; padding:20px; background:var(--bg); color:#fff; min-height:100vh;}
+    a.back-link{color:#f9a8d4; text-decoration:none; font-weight:600}
+    a.back-link:hover{text-decoration:underline}
+    h1{margin:10px 0 16px; text-align:center; color:#f9a8d4}
+
+    .controls{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; margin:20px 0 28px}
+    .controls label{color:#fff}
+    .controls select{
+      padding:10px 12px; border-radius:10px; border:none; font-size:14px; background:#fff; color:#111827; font-weight:600;
+    }
+    .period{display:flex; gap:8px; align-items:center; background:#ffffff22; padding:6px 10px; border-radius:999px}
+    .period input{accent-color:#f9a8d4}
+
+    .section{margin-bottom:28px;}
+    .card{background:var(--card); color:var(--ink); border-radius:14px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.18);}
+    .card h3{margin:0 0 12px; font-size:16px; color:var(--muted); font-weight:800; letter-spacing:.02em}
+
+    .grid{display:grid; gap:20px}
+    .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:1100px){ .kpis{grid-template-columns:1fr 1fr} }
+    @media (max-width:900px){ .kpis,.two-col{grid-template-columns:1fr} }
+
+    .kpi-value{font-size:30px; font-weight:900}
+    .kpi-sub{color:var(--muted); font-size:12px; margin-top:4px}
+
+    /* ====== Calendrier avec total semaine ====== */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr) 120px; /* Lun..Dim + Total semaine */
+      gap: 6px;
+    }
+    .cal-head {
+      text-align: center; font-weight: 700; font-size: 12px; color: #e5e7eb; margin-bottom: 4px;
+    }
+    .cal-head.total-head { text-align:center; }
+    .day {
+      background: var(--heat0); color: #fff; border-radius: 10px; padding: 8px; text-align: center;
+      min-height: 70px; display: flex; flex-direction: column; justify-content: center; gap: 4px; font-size: 12px;
+    }
+    .day.empty { background: transparent; box-shadow: none; }
+    .day.no-sale { background: #374151; color: #9ca3af; }
+    .d {font-weight:900; font-size:16px}
+    .v {font-size:11px; color:#f1f5f9}
+    .lv0{background:var(--heat0)} .lv1{background:var(--heat1)} .lv2{background:var(--heat2)} .lv3{background:var(--heat3)} .lv4{background:var(--heat4)}
+    .week-total{
+      background:#111827; color:#fff; border-radius:10px; padding:8px; text-align:center;
+      min-height:70px; display:flex; flex-direction:column; justify-content:center; gap:4px; font-size:12px; font-weight:800;
+    }
+    .week-total .v { font-size:11px; color:#f1f5f9; font-weight:600; }
+    .hint{color:#e5e7eb; font-size:12px; margin-top:8px}
+
+    .list{display:flex; flex-direction:column; gap:14px}
+    .row{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center}
+    .row .name{font-weight:800}
+    .row .nums{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+    .row .nums small{color:var(--muted)}
+    .barwrap{grid-column:1/-1; background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
+    .bar{height:100%; background:linear-gradient(90deg,var(--bar1),var(--bar2))}
+    /* sous-détail Neuf/Occasion */
+    .split{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; color:#fff}
+    .pill.neuf{background:var(--pill-neuf)}
+    .pill.occ{background:var(--pill-occ)}
+    .pill.aut{background:var(--pill-aut); color:#111827}
+
+    .month-list{display:flex; flex-direction:column; gap:12px}
+    .month-row{display:grid; grid-template-columns:80px 1fr auto; gap:10px; align-items:center}
+    .month-row .label{font-weight:800}
+    .month-barwrap{background:#f3f4f6; border-radius:999px; overflow:hidden; height:10px}
+    .month-bar{height:100%; background:linear-gradient(90deg,var(--bar2),var(--bar1))}
+  </style>
 </head>
-
 <body>
-<a href="index.html">← Nouvelle vente</a> |
-<a href="saved.html">🧾 Toutes les ventes</a>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
+    <div class="left-nav">
+      <a href="index.html" class="back-link">&larr; Nouvelle vente</a> |
+      <a href="saved.html" class="back-link">🧾 Toutes les ventes</a>
+    </div>
+  </div>
 
-<h1>Statistiques</h1>
-<div id="stats"></div>
+  <h1>Statistiques des ventes</h1>
 
-<script>
-const stats=document.getElementById('stats');
-const data=JSON.parse(localStorage.getItem('savedSnapshots')||'[]');
+  <div class="controls">
+    <div class="period">
+      <label><input type="radio" name="period" value="month" checked> Mois</label>
+      <label><input type="radio" name="period" value="year"> Année</label>
+    </div>
 
-let totalNet=0, count=0;
-const byCat={};
+    <label for="monthSelect">Mois :</label>
+    <select id="monthSelect"></select>
 
-data.forEach(s=>{
-  const disc=(s.discount||0)/(s.entries.length||1);
-  s.entries.forEach(e=>{
-    const net=Math.max(e.price-disc,0);
-    totalNet+=net; count++;
-    byCat[e.category]=(byCat[e.category]||0)+net;
-  });
-});
+    <label for="yearSelect" class="year-label" style="display:none">Année :</label>
+    <select id="yearSelect" style="display:none"></select>
+  </div>
 
-stats.innerHTML=`
-<div class="card">
-  <h3>Total NET</h3>
-  <strong>CHF ${totalNet.toFixed(2)}</strong><br>
-  Disques vendus: ${count}
-</div>
-<div class="card">
-  <h3>Par catégorie</h3>
-  ${Object.entries(byCat).map(([k,v])=>`
-    <div>${k}: CHF ${v.toFixed(2)}
-      <div class="bar" style="width:${(v/totalNet*100).toFixed(0)}%"></div>
-    </div>`).join('')}
-</div>`;
-</script>
+  <!-- KPIs (uniquement en mode Mois) -->
+  <section id="kpiSection" class="section grid kpis">
+    <div class="card">
+      <h3>Total NET (après rabais)</h3>
+      <div class="kpi-value" id="kpiTotal">—</div>
+      <div class="kpi-sub" id="kpiAvgDay">—</div>
+    </div>
+    <div class="card">
+      <h3>Disques vendus</h3>
+      <div class="kpi-value" id="kpiCount">—</div>
+      <div class="kpi-sub" id="kpiAvgTicket">—</div>
+    </div>
+    <div class="card">
+      <h3>Rabais totaux</h3>
+      <div class="kpi-value" id="kpiDiscount">—</div>
+      <div class="kpi-sub" id="kpiAvgDiscount">—</div>
+    </div>
+  </section>
+
+  <!-- Calendrier (uniquement en mode Mois) -->
+  <section id="calendarSection" class="section card">
+    <h3>Ventes ce mois (calendrier) — montants nets</h3>
+    <div id="calendar" class="calendar"></div>
+    <div class="hint">Lun → Dim, jours sans ventes en gris. Colonne à droite : total par semaine.</div>
+  </section>
+
+  <!-- Breakdown (toujours visible, selon période) -->
+  <section class="section grid two-col">
+    <div class="card">
+      <h3 id="catTitle">Répartition par catégorie (NET)</h3>
+      <div id="catList" class="list"></div>
+    </div>
+    <div class="card">
+      <h3 id="styleTitle">Répartition par style (NET) — Neuf vs Occasion</h3>
+      <div id="styleList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- Comparaison mensuelle (UNIQUEMENT en mode Année) -->
+  <section id="compareSection" class="section card" style="display:none">
+    <h3 id="compareTitle">Mois de l’année sélectionnée (NET)</h3>
+    <div id="monthCompare" class="month-list"></div>
+  </section>
+
+  <script>
+    const CHF = n => new Intl.NumberFormat('fr-CH',{style:'currency',currency:'CHF',maximumFractionDigits:2}).format(n);
+    const pad = n => String(n).padStart(2,'0');
+    const dayNames = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+
+    const snapshots = JSON.parse(localStorage.getItem("savedSnapshots") || "[]");
+
+    const monthSelect = document.getElementById("monthSelect");
+    const yearSelect  = document.getElementById("yearSelect");
+    const yearLabel   = document.querySelector(".year-label");
+
+    const els = {
+      kpiSection: document.getElementById("kpiSection"),
+      kpiTotal: document.getElementById("kpiTotal"),
+      kpiAvgDay: document.getElementById("kpiAvgDay"),
+      kpiCount: document.getElementById("kpiCount"),
+      kpiAvgTicket: document.getElementById("kpiAvgTicket"),
+      kpiDiscount: document.getElementById("kpiDiscount"),
+      kpiAvgDiscount: document.getElementById("kpiAvgDiscount"),
+      calendarSection: document.getElementById("calendarSection"),
+      calendar: document.getElementById("calendar"),
+      catTitle: document.getElementById("catTitle"),
+      styleTitle: document.getElementById("styleTitle"),
+      catList: document.getElementById("catList"),
+      styleList: document.getElementById("styleList"),
+      compareSection: document.getElementById("compareSection"),
+      compareTitle: document.getElementById("compareTitle"),
+      monthCompare: document.getElementById("monthCompare"),
+    };
+
+    function monthKeyFromDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1); }
+    function toDayKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+    function yearFromDate(d){ return d.getFullYear(); }
+
+    // --- Peupler sélecteurs ---
+    (function populateSelectors(){
+      const monthSet = new Set(snapshots.map(s => monthKeyFromDate(new Date(s.time))));
+      const months = Array.from(monthSet).sort().reverse();
+      monthSelect.innerHTML = "";
+      months.forEach(m=>{
+        const [y,mo] = m.split("-");
+        const op = document.createElement("option");
+        op.value = m; op.textContent = `${mo}/${y}`;
+        monthSelect.appendChild(op);
+      });
+
+      const yearSet = new Set(snapshots.map(s => yearFromDate(new Date(s.time))));
+      const years = Array.from(yearSet).sort((a,b)=>b-a);
+      yearSelect.innerHTML = "";
+      years.forEach(y=>{
+        const op = document.createElement("option");
+        op.value = y; op.textContent = y;
+        yearSelect.appendChild(op);
+      });
+    })();
+
+    function filterByMonth(mkey){
+      return snapshots.filter(s=> monthKeyFromDate(new Date(s.time)) === mkey );
+    }
+    function filterByYear(y){
+      return snapshots.filter(s=> yearFromDate(new Date(s.time)) === Number(y) );
+    }
+
+    // --- Résumés (NET et rabais) + split style: Neuf/Occasion/Autres ---
+    function summarizeMonth(data){
+      const byDay = {};
+      const byCatC = {}, byCatS = {};
+      const byStyleC = {}, byStyleS = {};
+      const byStyleSplitC = {}, byStyleSplitS = {};
+      let totalNet=0, totalCount=0, totalDiscount=0;
+
+      data.forEach(s=>{
+        const d = new Date(s.time);
+        const dayKey = toDayKey(d);
+        let subNet=0, cnt=0;
+
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          const net = Math.max(price - discount, 0);
+          const cat = e.category || "—";
+          const st = e.style || "—";
+          const catKey = (cat === 'Neuf' || cat === 'Occasion') ? cat : 'Autres';
+
+          totalNet += net; totalDiscount += discount; totalCount++;
+          subNet += net; cnt++;
+
+          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+net;
+          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+net;
+
+          if(!byStyleSplitC[st]) byStyleSplitC[st] = {Neuf:0, Occasion:0, Autres:0, total:0};
+          if(!byStyleSplitS[st]) byStyleSplitS[st] = {Neuf:0, Occasion:0, Autres:0, total:0};
+          byStyleSplitC[st][catKey] += 1; byStyleSplitC[st].total += 1;
+          byStyleSplitS[st][catKey] += net; byStyleSplitS[st].total += net;
+        });
+
+        if(!byDay[dayKey]) byDay[dayKey]={ total:0, count:0 };
+        byDay[dayKey].total+=subNet; byDay[dayKey].count+=cnt;
+      });
+
+      return { totalNet, totalCount, totalDiscount, byDay, byCatC, byCatS, byStyleC, byStyleS, byStyleSplitC, byStyleSplitS };
+    }
+
+    function summarizeYear(data){
+      const byCatC = {}, byCatS = {};
+      const byStyleC = {}, byStyleS = {};
+      const byStyleSplitC = {}, byStyleSplitS = {};
+      const months = Array.from({length:12}, (_,i)=>({ total:0 }));
+      let totalNet=0;
+
+      data.forEach(s=>{
+        const d = new Date(s.time);
+        const m = d.getMonth();
+        let subNet=0;
+
+        s.entries.forEach(e=>{
+          const price = Number(e.price)||0;
+          const discount = Number(e.discount)||0;
+          const net = Math.max(price - discount, 0);
+          const cat = e.category || "—";
+          const st = e.style || "—";
+          const catKey = (cat === 'Neuf' || cat === 'Occasion') ? cat : 'Autres';
+
+          subNet += net;
+
+          byCatC[cat]=(byCatC[cat]||0)+1; byCatS[cat]=(byCatS[cat]||0)+net;
+          byStyleC[st]=(byStyleC[st]||0)+1; byStyleS[st]=(byStyleS[st]||0)+net;
+
+          if(!byStyleSplitC[st]) byStyleSplitC[st] = {Neuf:0, Occasion:0, Autres:0, total:0};
+          if(!byStyleSplitS[st]) byStyleSplitS[st] = {Neuf:0, Occasion:0, Autres:0, total:0};
+          byStyleSplitC[st][catKey] += 1; byStyleSplitC[st].total += 1;
+          byStyleSplitS[st][catKey] += net; byStyleSplitS[st].total += net;
+        });
+
+        months[m].total += subNet;
+        totalNet += subNet;
+      });
+
+      return { months, totalNet, byCatC, byCatS, byStyleC, byStyleS, byStyleSplitC, byStyleSplitS };
+    }
+
+    // --- Rendus UI ---
+    function renderKPI(sum){
+      const daysWithSales = Object.values(sum.byDay).filter(d=>d.total>0).length || 1;
+      els.kpiTotal.textContent = CHF(sum.totalNet);
+      els.kpiAvgDay.textContent = `Moyenne jour (jours avec ventes): ${CHF(sum.totalNet/daysWithSales)}`;
+      els.kpiCount.textContent = sum.totalCount.toString();
+      els.kpiAvgTicket.textContent = `Ticket moyen NET: ${sum.totalCount? CHF(sum.totalNet/sum.totalCount): '—'}`;
+      els.kpiDiscount.textContent = CHF(sum.totalDiscount);
+      els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
+    }
+
+    // ====== Calendrier avec total semaine ======
+    function renderCalendar(sum, mkey){
+      els.calendar.innerHTML = "";
+      if(!mkey){ return; }
+      const [y,mo] = mkey.split("-").map(Number);
+      const first = new Date(y, mo-1, 1);
+      const last = new Date(y, mo, 0);
+
+      // En-têtes: Lun..Dim + "Total semaine"
+      dayNames.forEach(dn=>{
+        const head = document.createElement("div");
+        head.className = "cal-head";
+        head.textContent = dn;
+        els.calendar.appendChild(head);
+      });
+      const totalHead = document.createElement("div");
+      totalHead.className = "cal-head total-head";
+      totalHead.textContent = "Total semaine";
+      els.calendar.appendChild(totalHead);
+
+      const toKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      // max pour intensité
+      const totals = Object.values(sum.byDay).map(d=>d.total);
+      const max = Math.max(1, ...totals);
+
+      // lundi=0
+      let dow = (first.getDay()+6)%7;
+      let weekSum = 0;
+      let weekCount = 0;
+
+      // cases vides avant le 1er
+      for(let i=0;i<dow;i++){
+        const empty = document.createElement("div");
+        empty.className="day empty";
+        els.calendar.appendChild(empty);
+      }
+
+      for(let day=1; day<=last.getDate(); day++){
+        const d = new Date(y, mo-1, day);
+        const key = toKey(d);
+        const info = sum.byDay[key] || {total:0, count:0};
+        const ratio = info.total/max;
+        const lv = ratio===0 ? 0 : ratio<.25 ? 1 : ratio<.5 ? 2 : ratio<.8 ? 3 : 4;
+
+        const box = document.createElement("div");
+        if(info.total===0){
+          box.className="day no-sale";
+          box.innerHTML = `<div class="d">${day}</div><div class="v">0</div>`;
+        } else {
+          box.className = `day lv${lv}`;
+          box.title = `${key} • ${info.count} disques — ${CHF(info.total)}`;
+          box.innerHTML = `<div class="d">${day}</div><div class="v">${info.count} | ${CHF(info.total)}</div>`;
+        }
+        els.calendar.appendChild(box);
+
+        // accumulateur semaine
+        weekSum += info.total;
+        weekCount += info.count;
+
+        // si Dimanche (dow==6) OU fin de mois, on ferme la ligne:
+        const isWeekEnd = dow === 6;
+        const isMonthEnd = day === last.getDate();
+        if(isWeekEnd || isMonthEnd){
+          // compléter jusqu'à dimanche si le mois finit avant
+          if(isMonthEnd && dow < 6){
+            for(let i=dow+1; i<=6; i++){
+              const empty = document.createElement("div");
+              empty.className="day empty";
+              els.calendar.appendChild(empty);
+            }
+          }
+          // ajouter la cellule "Total semaine"
+          const wk = document.createElement("div");
+          wk.className = "week-total";
+          wk.title = `Semaine • ${weekCount} disques — ${CHF(weekSum)}`;
+          wk.innerHTML = `<div>Total</div><div class="v">${weekCount} | ${CHF(weekSum)}</div>`;
+          els.calendar.appendChild(wk);
+
+          // reset semaine
+          weekSum = 0;
+          weekCount = 0;
+        }
+
+        // avancer le jour de la semaine
+        dow = (dow + 1) % 7;
+      }
+    }
+
+    function renderBreakdown(containerList, counts, sums, totalNet){
+      const items = Object.keys(counts).map(k=>({
+        name:k, count:counts[k], sum:sums[k]||0
+      })).sort((a,b)=> b.sum - a.sum);
+
+      containerList.innerHTML = "";
+      const maxSum = Math.max(1, ...items.map(i=>i.sum));
+
+      items.forEach(i=>{
+        const row = document.createElement('div');
+        row.className = 'row';
+        const share = totalNet? (i.sum/totalNet*100):0;
+        row.innerHTML = `
+          <div class="name">${i.name}</div>
+          <div class="nums"><strong>${i.count}</strong> <small>disques</small></div>
+          <div class="nums"><strong>${CHF(i.sum)}</strong> <small>${share.toFixed(1)}%</small></div>
+          <div class="barwrap"><div class="bar" style="width:${(i.sum/maxSum*100).toFixed(0)}%"></div></div>
+        `;
+        containerList.appendChild(row);
+      });
+      if(!items.length){
+        containerList.innerHTML = `<div style="color:var(--muted)">Aucune donnée.</div>`;
+      }
+    }
+
+    // rendu par style avec split Neuf / Occasion (+ Autres si présent)
+    function renderStyleSplit(containerList, splitCounts, splitSums, totalNet){
+      const styles = Object.keys(splitCounts).map(st=>({
+        name: st,
+        totalCount: splitCounts[st].total || 0,
+        totalSum: splitSums[st].total || 0,
+        neufC: splitCounts[st].Neuf || 0,
+        occC: splitCounts[st].Occasion || 0,
+        autC: splitCounts[st].Autres || 0,
+        neufS: splitSums[st].Neuf || 0,
+        occS: splitSums[st].Occasion || 0,
+        autS: splitSums[st].Autres || 0,
+      })).sort((a,b)=> b.totalSum - a.totalSum);
+
+      containerList.innerHTML = "";
+      if(!styles.length){
+        containerList.innerHTML = `<div style="color:var(--muted)">Aucune donnée.</div>`;
+        return;
+      }
+      const maxSum = Math.max(1, ...styles.map(s=>s.totalSum));
+
+      styles.forEach(s=>{
+        const share = totalNet? (s.totalSum/totalNet*100):0;
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="name">${s.name}</div>
+          <div class="nums"><strong>${s.totalCount}</strong> <small>disques</small></div>
+          <div class="nums"><strong>${CHF(s.totalSum)}</strong> <small>${share.toFixed(1)}%</small></div>
+          <div class="barwrap"><div class="bar" style="width:${(s.totalSum/maxSum*100).toFixed(0)}%"></div></div>
+          <div class="split">
+            <span class="pill neuf">Neuf: ${s.neufC} — ${CHF(s.neufS)}</span>
+            <span class="pill occ">Occasion: ${s.occC} — ${CHF(s.occS)}</span>
+            ${ (s.autC||0) > 0 ? `<span class="pill aut">Autres: ${s.autC} — ${CHF(s.autS)}</span>` : '' }
+          </div>
+        `;
+        containerList.appendChild(row);
+      });
+    }
+
+    function renderMonthComparisonForYear(ySum, year){
+      els.monthCompare.innerHTML = "";
+      const maxT = Math.max(1, ...ySum.months.map(m=>m.total));
+      ySum.months.forEach((m, idx)=>{
+        const mo = pad(idx+1);
+        const row = document.createElement('div');
+        row.className = 'month-row';
+        row.innerHTML = `
+          <div class="label">${mo}/${year}</div>
+          <div class="month-barwrap"><div class="month-bar" style="width:${(m.total/maxT*100).toFixed(0)}%"></div></div>
+          <div class="nums" style="font-variant-numeric:tabular-nums"><strong>${CHF(m.total)}</strong></div>
+        `;
+        els.monthCompare.appendChild(row);
+      });
+    }
+
+    function updateVisibility(period){
+      const showMonth = period === 'month';
+      monthSelect.style.display = showMonth ? '' : 'none';
+      document.querySelector('label[for="monthSelect"]').style.display = showMonth ? '' : 'none';
+      yearSelect.style.display = showMonth ? 'none' : '';
+      yearLabel.style.display = showMonth ? 'none' : '';
+      els.kpiSection.style.display = showMonth ? '' : 'none';
+      els.calendarSection.style.display = showMonth ? '' : 'none';
+      els.compareSection.style.display = showMonth ? 'none' : '';
+      els.catTitle.textContent = showMonth ? 'Répartition par catégorie (NET — mois)' : 'Répartition par catégorie (NET — année)';
+      els.styleTitle.textContent = 'Répartition par style (NET) — Neuf vs Occasion';
+      els.compareTitle.textContent = 'Mois de l’année sélectionnée (NET)';
+    }
+
+    function renderAll(){
+      const period = document.querySelector('input[name="period"]:checked').value;
+      updateVisibility(period);
+
+      if(period === 'month'){
+        const mkey = monthSelect.value || (snapshots[0] ? monthKeyFromDate(new Date(snapshots[0].time)) : "");
+        const monthData = filterByMonth(mkey);
+        const sum = summarizeMonth(monthData);
+        renderKPI(sum);
+        renderCalendar(sum, mkey);
+        renderBreakdown(els.catList, sum.byCatC, sum.byCatS, sum.totalNet);
+        renderStyleSplit(els.styleList, sum.byStyleSplitC, sum.byStyleSplitS, sum.totalNet);
+      } else {
+        const year = yearSelect.value || (snapshots[0] ? yearFromDate(new Date(snapshots[0].time)) : "");
+        const yearData = filterByYear(year);
+        const ySum = summarizeYear(yearData);
+        // Pas de KPI annuel, pas de calendrier.
+        renderBreakdown(els.catList, ySum.byCatC, ySum.byCatS, ySum.totalNet);
+        renderStyleSplit(els.styleList, ySum.byStyleSplitC, ySum.byStyleSplitS, ySum.totalNet);
+        renderMonthComparisonForYear(ySum, year);
+      }
+    }
+
+    monthSelect.addEventListener('change', renderAll);
+    yearSelect.addEventListener('change', renderAll);
+    document.querySelectorAll('input[name="period"]').forEach(i => i.addEventListener('change', renderAll));
+    renderAll();
+  </script>
 </body>
 </html>
