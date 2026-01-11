@@ -76,15 +76,20 @@
       width: 150px;
       transition: background-color 0.3s ease;
     }
-    #addRowBtn:hover { background-color: #1e7e34; }
+    #addRowBtn:hover {
+      background-color: #1e7e34;
+    }
 
     .sidebar {
       width: 200px;
       flex-shrink: 0;
       background: white;
+      border: none;
+      box-shadow: none;
       padding: 0;
       display: flex;
       flex-direction: column;
+      justify-content: flex-start;
       align-items: center;
       height: 100%;
       gap: 12px;
@@ -100,6 +105,7 @@
       border-radius: 5px;
       cursor: pointer;
       margin-top: 10px;
+      transition: background-color 0.3s ease;
     }
     .sidebar button:hover { background-color: #cc3027; }
 
@@ -108,12 +114,13 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      margin-bottom: 4px;
       padding: 0 6px;
     }
-
     .sidebar label {
       font-size: 14px;
       font-weight: 700;
+      color: #111827;
       text-align: center;
     }
 
@@ -122,7 +129,10 @@
       font-weight: bold;
       text-align: center;
       padding: 15px;
+      border: none;
+      border-radius: 0;
       color: #007AFF;
+      user-select: none;
       width: 100%;
     }
 
@@ -137,130 +147,212 @@
       border-radius: 5px;
       font-weight: 600;
       margin-top: 10px;
+      transition: background-color 0.3s ease;
     }
     a.saved-link:hover, a.stats-link:hover { background-color: #005bb5; }
   </style>
 </head>
-
 <body>
-<div class="wrapper">
-  <div class="container">
-    <h1>Nouvelle vente</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Style</th>
-          <th>Price per Unit</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-    <button id="addRowBtn">Add More Rows</button>
+
+  <div class="wrapper">
+    <div class="container">
+      <h1>Nouvelle vente</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Style</th>
+            <th>Price per Unit</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <button id="addRowBtn">Add More Rows</button>
+    </div>
+
+    <div class="sidebar">
+      <button id="resetBtn">💾 Sauvegarder</button>
+
+      <div class="field">
+        <label for="discountSelect">Rabais (CHF)</label>
+        <select id="discountSelect">
+          <option value="0" selected>0</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tipSelect">Pourboire (CHF)</label>
+        <select id="tipSelect">
+          <option value="0" selected>0</option>
+        </select>
+      </div>
+
+      <div class="sum-box">
+        Total (CHF):<br />
+        <span id="totalPrice">0</span>
+      </div>
+
+      <a href="saved.html" class="saved-link">Toutes les ventes</a>
+      <a href="stats.html" class="stats-link">📊 Statistiques</a>
+    </div>
   </div>
 
-  <div class="sidebar">
-    <button id="resetBtn">💾 Sauvegarder</button>
+  <script>
+    const categories = [
+      'Vinyls Neuf',
+      'Vinyls Occasion',
+      'Cassettes',
+      'Merch',
+      'Bar'
+    ];
 
-    <div class="field">
-      <label>Rabais (CHF)</label>
-      <select id="discountSelect"><option value="0">0</option></select>
-    </div>
+    const stylesByCategory = {
+      'Vinyls Neuf': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
+      'Vinyls Occasion': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
+      'Cassettes': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
+      'Merch': ['Tshirt', 'Poids', 'Diamants'],
+      'Bar': ['Caffe']
+    };
 
-    <div class="field">
-      <label>Pourboire (CHF)</label>
-      <select id="tipSelect"><option value="0">0</option></select>
-    </div>
+    const maxRows = 20;
 
-    <div class="sum-box">
-      Total (CHF):<br><span id="totalPrice">0</span>
-    </div>
+    const tableBody = document.getElementById('tableBody');
+    const totalPriceSpan = document.getElementById('totalPrice');
+    const resetBtn = document.getElementById('resetBtn');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const tipSelect = document.getElementById('tipSelect');
+    const discountSelect = document.getElementById('discountSelect');
 
-    <a href="saved.html" class="saved-link">Toutes les ventes</a>
-    <a href="stats.html" class="stats-link">📊 Statistiques</a>
-  </div>
-</div>
+    for (let v = 1; v <= 20; v++) {
+      const opt1 = document.createElement('option');
+      opt1.value = v;
+      opt1.textContent = v;
+      discountSelect.appendChild(opt1);
 
-<script>
-const categories = ['Vinyls Neuf','Vinyls Occasion','Cassettes','Merch','Bar'];
-
-const stylesByCategory = {
-  'Vinyls Neuf': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
-  'Vinyls Occasion': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
-  'Cassettes': ['3CHF','Extra-EU','French/Recording','Hip-Hop','Electronic','Reggae/Dub','Rock','Jazz/Blues/Funk','Wave'],
-  'Merch': ['Tshirt','Poids','Diamants'],
-  'Bar': ['Caffe']
-};
-
-const tableBody = document.getElementById('tableBody');
-const totalPriceSpan = document.getElementById('totalPrice');
-const discountSelect = document.getElementById('discountSelect');
-const tipSelect = document.getElementById('tipSelect');
-
-for (let i=1;i<=20;i++){
-  discountSelect.innerHTML+=`<option>${i}</option>`;
-  tipSelect.innerHTML+=`<option>${i}</option>`;
-}
-
-function makePlaceholderOption(){
-  const o=document.createElement('option');
-  o.value="";o.textContent="-- select --";o.disabled=true;o.selected=true;
-  return o;
-}
-
-function createRow(){
-  const row=document.createElement('tr');
-
-  const catSel=document.createElement('select');
-  catSel.appendChild(makePlaceholderOption());
-  categories.forEach(c=>catSel.innerHTML+=`<option>${c}</option>`);
-
-  const styleSel=document.createElement('select');
-  styleSel.appendChild(makePlaceholderOption());
-
-  const priceSel=document.createElement('select');
-  priceSel.appendChild(makePlaceholderOption());
-  for(let p=1;p<=200;p++) priceSel.innerHTML+=`<option>${p}</option>`;
-
-  catSel.addEventListener('change',()=>{
-    styleSel.innerHTML='';
-    styleSel.appendChild(makePlaceholderOption());
-    (stylesByCategory[catSel.value]||[]).forEach(s=>{
-      styleSel.innerHTML+=`<option>${s}</option>`;
-    });
-  });
-
-  // ⭐ AUTO PRICE 3CHF ⭐
-  styleSel.addEventListener('change',()=>{
-    if(styleSel.value==='3CHF'){
-      priceSel.value='3';
-      updateTotal();
+      const opt2 = document.createElement('option');
+      opt2.value = v;
+      opt2.textContent = v;
+      tipSelect.appendChild(opt2);
     }
-  });
 
-  priceSel.addEventListener('change',updateTotal);
+    function makePlaceholderOption() {
+      const opt = document.createElement('option');
+      opt.value = "";
+      opt.textContent = "-- select --";
+      opt.selected = true;
+      opt.disabled = true;
+      return opt;
+    }
 
-  [catSel,styleSel,priceSel].forEach(s=>{
-    const td=document.createElement('td');
-    td.appendChild(s);
-    row.appendChild(td);
-  });
+    function createRow() {
+      const row = document.createElement('tr');
 
-  return row;
-}
+      const categoryCell = document.createElement('td');
+      const categorySelect = document.createElement('select');
+      categorySelect.appendChild(makePlaceholderOption());
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+      categoryCell.appendChild(categorySelect);
+      row.appendChild(categoryCell);
 
-for(let i=0;i<20;i++) tableBody.appendChild(createRow());
+      const styleCell = document.createElement('td');
+      const styleSelect = document.createElement('select');
+      styleSelect.appendChild(makePlaceholderOption());
+      styleCell.appendChild(styleSelect);
+      row.appendChild(styleCell);
 
-function updateTotal(){
-  let sum=0;
-  tableBody.querySelectorAll('tr').forEach(r=>{
-    const v=r.cells[2].querySelector('select').value;
-    if(v) sum+=Number(v);
-  });
-  totalPriceSpan.textContent=Math.max(sum-discountSelect.value+Number(tipSelect.value),0);
-}
+      const priceCell = document.createElement('td');
+      const priceSelect = document.createElement('select');
+      priceSelect.appendChild(makePlaceholderOption());
+      for (let price = 1; price <= 200; price++) {
+        const option = document.createElement('option');
+        option.value = price;
+        option.textContent = price;
+        priceSelect.appendChild(option);
+      }
+      priceCell.appendChild(priceSelect);
+      row.appendChild(priceCell);
 
-discountSelect.onchange=tipSelect.onchange=updateTotal;
-</script>
+      categorySelect.addEventListener('change', () => {
+        styleSelect.innerHTML = '';
+        styleSelect.appendChild(makePlaceholderOption());
+
+        const styles = stylesByCategory[categorySelect.value] || [];
+        styles.forEach(st => {
+          const option = document.createElement('option');
+          option.value = st;
+          option.textContent = st;
+          styleSelect.appendChild(option);
+        });
+      });
+
+      priceSelect.addEventListener('change', updateTotal);
+
+      return row;
+    }
+
+    for (let i = 0; i < maxRows; i++) tableBody.appendChild(createRow());
+
+    function computeSubtotal() {
+      let subtotal = 0;
+      tableBody.querySelectorAll('tr').forEach(row => {
+        const priceSelect = row.cells[2].querySelector('select');
+        if (priceSelect && priceSelect.value) subtotal += Number(priceSelect.value);
+      });
+      return subtotal;
+    }
+
+    function updateTotal() {
+      const subtotal = computeSubtotal();
+      const rabais = Number(discountSelect.value) || 0;
+      const tip = Number(tipSelect.value) || 0;
+      const total = Math.max(subtotal - rabais + tip, 0);
+      totalPriceSpan.textContent = total;
+    }
+
+    function saveSnapshot() {
+      const rows = tableBody.querySelectorAll('tr');
+      let snapshot = {
+        time: new Date().toISOString(),
+        discount: Number(discountSelect.value) || 0,
+        tip: Number(tipSelect.value) || 0,
+        entries: []
+      };
+      rows.forEach(row => {
+        const cat = row.cells[0].querySelector('select').value;
+        const style = row.cells[1].querySelector('select').value;
+        const price = row.cells[2].querySelector('select').value;
+        if (cat && style && price) {
+          snapshot.entries.push({ category: cat, style: style, price: Number(price) });
+        }
+      });
+      if (snapshot.entries.length === 0) return;
+      const saved = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
+      saved.push(snapshot);
+      localStorage.setItem('savedSnapshots', JSON.stringify(saved));
+    }
+
+    discountSelect.addEventListener('change', updateTotal);
+    tipSelect.addEventListener('change', updateTotal);
+
+    resetBtn.addEventListener('click', () => {
+      saveSnapshot();
+      tableBody.querySelectorAll('select').forEach(sel => (sel.selectedIndex = 0));
+      discountSelect.value = "0";
+      tipSelect.value = "0";
+      updateTotal();
+    });
+
+    addRowBtn.addEventListener('click', () => {
+      for (let i = 0; i < 10; i++) tableBody.appendChild(createRow());
+    });
+
+    updateTotal();
+  </script>
 </body>
 </html>
