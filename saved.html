@@ -15,9 +15,7 @@
       margin-bottom: 10px;
       color: white;
     }
-    .day-block {
-      margin-bottom: 28px;
-    }
+    .day-block { margin-bottom: 28px; }
     .day-header {
       color: #fff;
       font-weight: 700;
@@ -27,9 +25,7 @@
       align-items: baseline;
       gap: 12px;
     }
-    .day-date {
-      font-size: 1.05rem;
-    }
+    .day-date { font-size: 1.05rem; }
     .day-total {
       font-size: 1.05rem;
       color: #FFD166;
@@ -68,13 +64,13 @@
       margin-top: 4px;
       line-height: 1.4;
     }
-    .total-global {
-      font-size: 1.2rem;
-      color: white;
+    .totals-wrap {
       text-align: center;
+      color: white;
       margin-top: 10px;
       margin-bottom: 20px;
       font-weight: bold;
+      line-height: 1.5;
     }
     table {
       width: 100%;
@@ -97,9 +93,7 @@
       text-decoration: none;
       font-weight: 600;
     }
-    a.back-link:hover {
-      text-decoration: underline;
-    }
+    a.back-link:hover { text-decoration: underline; }
     .no-data {
       text-align: center;
       margin-top: 50px;
@@ -121,9 +115,7 @@
       transition: background-color 0.3s ease;
       width: 180px;
     }
-    button#downloadCsv:hover {
-      background-color: #005bb5;
-    }
+    button#downloadCsv:hover { background-color: #005bb5; }
     select#monthFilter {
       display: block;
       margin: 20px auto;
@@ -145,7 +137,11 @@
 
   <button id="downloadCsv">Download CSV</button>
 
-  <div id="totalGlobal" class="total-global"></div>
+  <div class="totals-wrap">
+    <div id="totalGlobal"></div>
+    <div id="totalDiscount"></div>
+    <div id="totalTip"></div>
+  </div>
 
   <div id="snapshotsContainer"></div>
 
@@ -153,6 +149,8 @@
     const container = document.getElementById('snapshotsContainer');
     const downloadBtn = document.getElementById('downloadCsv');
     const totalGlobalDiv = document.getElementById('totalGlobal');
+    const totalDiscountDiv = document.getElementById('totalDiscount');
+    const totalTipDiv = document.getElementById('totalTip');
     const monthFilter = document.getElementById('monthFilter');
 
     let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
@@ -193,6 +191,8 @@
         container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
         downloadBtn.style.display = 'none';
         totalGlobalDiv.textContent = '';
+        totalDiscountDiv.textContent = '';
+        totalTipDiv.textContent = '';
         return;
       }
 
@@ -201,6 +201,8 @@
 
       const byDay = {};
       let grandTotal = 0;
+      let grandDiscount = 0;
+      let grandTip = 0;
 
       filteredSnapshots.forEach((snapshot) => {
         const d = new Date(snapshot.time);
@@ -219,9 +221,13 @@
         byDay[dayKey].items.push({ snapshot, gross, discount, tip, net, count });
 
         grandTotal += net;
+        grandDiscount += discount;
+        grandTip += tip;
       });
 
-      totalGlobalDiv.textContent = `Total général de toutes les ventes : ${fmtCHF(grandTotal)}`;
+      totalGlobalDiv.textContent = `Total général (NET) : ${fmtCHF(grandTotal)}`;
+      totalDiscountDiv.textContent = `Total général des rabais : ${fmtCHF(grandDiscount)}`;
+      totalTipDiv.textContent = `Total général des pourboires : ${fmtCHF(grandTip)}`;
 
       const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
 
