@@ -227,7 +227,7 @@
 
       totalGlobalDiv.textContent = `Total général (NET) : ${fmtCHF(grandTotal)}`;
       totalDiscountDiv.textContent = `Total général des rabais : ${fmtCHF(grandDiscount)}`;
-      totalTipDiv.textContent = `Total général des pourboires : ${fmtCHF(grandTip)}`;
+
 
       const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
 
@@ -285,7 +285,6 @@
           breakdown.className = 'breakdown';
           breakdown.innerHTML = `
             Rabais: <strong>- ${fmtCHF(discount)}</strong><br>
-            Pourboire: <strong>+ ${fmtCHF(tip)}</strong><br>
           `;
           snapshotDiv.appendChild(breakdown);
 
