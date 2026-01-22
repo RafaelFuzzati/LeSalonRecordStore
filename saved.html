@@ -15,7 +15,9 @@
       margin-bottom: 10px;
       color: white;
     }
-    .day-block { margin-bottom: 28px; }
+    .day-block {
+      margin-bottom: 28px;
+    }
     .day-header {
       color: #fff;
       font-weight: 700;
@@ -25,7 +27,9 @@
       align-items: baseline;
       gap: 12px;
     }
-    .day-date { font-size: 1.05rem; }
+    .day-date {
+      font-size: 1.05rem;
+    }
     .day-total {
       font-size: 1.05rem;
       color: #FFD166;
@@ -57,20 +61,13 @@
       text-align: right;
       margin-top: 10px;
     }
-    .breakdown {
-      text-align: right;
-      font-size: 0.95rem;
-      color: #444;
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-    .totals-wrap {
-      text-align: center;
+    .total-global {
+      font-size: 1.2rem;
       color: white;
+      text-align: center;
       margin-top: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 20px; /* en haut, avant les ventes */
       font-weight: bold;
-      line-height: 1.5;
     }
     table {
       width: 100%;
@@ -93,7 +90,9 @@
       text-decoration: none;
       font-weight: 600;
     }
-    a.back-link:hover { text-decoration: underline; }
+    a.back-link:hover {
+      text-decoration: underline;
+    }
     .no-data {
       text-align: center;
       margin-top: 50px;
@@ -115,7 +114,9 @@
       transition: background-color 0.3s ease;
       width: 180px;
     }
-    button#downloadCsv:hover { background-color: #005bb5; }
+    button#downloadCsv:hover {
+      background-color: #005bb5;
+    }
     select#monthFilter {
       display: block;
       margin: 20px auto;
@@ -131,26 +132,23 @@
 
   <h1>Toutes les ventes</h1>
 
+  <!-- Month selector -->
   <select id="monthFilter">
     <option value="all">Toutes les ventes</option>
   </select>
 
   <button id="downloadCsv">Download CSV</button>
 
-  <div class="totals-wrap">
-    <div id="totalGlobal"></div>
-    <div id="totalDiscount"></div>
-    <div id="totalTip"></div>
-  </div>
+  <!-- 🔝 Total général en haut -->
+  <div id="totalGlobal" class="total-global"></div>
 
+  <!-- Ventes groupées par jour -->
   <div id="snapshotsContainer"></div>
 
   <script>
     const container = document.getElementById('snapshotsContainer');
     const downloadBtn = document.getElementById('downloadCsv');
     const totalGlobalDiv = document.getElementById('totalGlobal');
-    const totalDiscountDiv = document.getElementById('totalDiscount');
-    const totalTipDiv = document.getElementById('totalTip');
     const monthFilter = document.getElementById('monthFilter');
 
     let snapshots = JSON.parse(localStorage.getItem('savedSnapshots') || "[]");
@@ -158,23 +156,26 @@
     const fmtCHF = (n) =>
       new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 2 }).format(n);
 
+    // Populate month selector
     function populateMonthSelector() {
+      // reset options (keep "all")
       monthFilter.innerHTML = '<option value="all">Toutes les ventes</option>';
+
       const monthsSet = new Set();
       snapshots.forEach(snap => {
         const d = new Date(snap.time);
         const monthKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
         monthsSet.add(monthKey);
       });
-      Array.from(monthsSet)
-        .sort((a,b) => b.localeCompare(a))
-        .forEach(monthKey => {
-          const [year, month] = monthKey.split('-');
-          const option = document.createElement('option');
-          option.value = monthKey;
-          option.text = `Ventes de ${month}/${year}`;
-          monthFilter.appendChild(option);
-        });
+
+      const monthsArray = Array.from(monthsSet).sort((a,b) => b.localeCompare(a)); // descending
+      monthsArray.forEach(monthKey => {
+        const option = document.createElement('option');
+        const [year, month] = monthKey.split('-');
+        option.value = monthKey;
+        option.text = `Ventes de ${month}/${year}`;
+        monthFilter.appendChild(option);
+      });
     }
 
     function renderSnapshots() {
@@ -191,45 +192,41 @@
         container.innerHTML = '<p class="no-data">Pas encore vendu de disques :( </p>';
         downloadBtn.style.display = 'none';
         totalGlobalDiv.textContent = '';
-        totalDiscountDiv.textContent = '';
-        totalTipDiv.textContent = '';
         return;
       }
 
       downloadBtn.style.display = 'block';
       container.innerHTML = '';
 
-      const byDay = {};
+      // 1) Grouper par jour et calculer le total & le nombre de disques par jour
+      const byDay = {}; // { 'YYYY-MM-DD': { total: number, count: number, items: [{snapshot, subtotal, count}] } }
       let grandTotal = 0;
-      let grandDiscount = 0;
-      let grandTip = 0;
 
       filteredSnapshots.forEach((snapshot) => {
         const d = new Date(snapshot.time);
         const dayKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
 
-        let gross = 0;
-        snapshot.entries.forEach(e => { gross += Number(e.price) || 0; });
-        const discount = Number(snapshot.discount) || 0;
-        const tip = Number(snapshot.tip) || 0;
-        const net = Math.max(gross - discount + tip, 0);
-        const count = snapshot.entries.length;
+        let subtotalForSnapshot = 0;
+        let countForSnapshot = 0;
+
+        snapshot.entries.forEach(e => {
+          subtotalForSnapshot += parseFloat(e.price) || 0;
+          countForSnapshot += 1;
+        });
 
         if (!byDay[dayKey]) byDay[dayKey] = { total: 0, count: 0, items: [] };
-        byDay[dayKey].total += net;
-        byDay[dayKey].count += count;
-        byDay[dayKey].items.push({ snapshot, gross, discount, tip, net, count });
+        byDay[dayKey].total += subtotalForSnapshot;
+        byDay[dayKey].count += countForSnapshot;
+        byDay[dayKey].items.push({ snapshot, subtotal: subtotalForSnapshot, count: countForSnapshot });
 
-        grandTotal += net;
-        grandDiscount += discount;
-        grandTip += tip;
+        grandTotal += subtotalForSnapshot;
       });
 
-      totalGlobalDiv.textContent = `Total général (NET) : ${fmtCHF(grandTotal)}`;
-      totalDiscountDiv.textContent = `Total général des rabais : ${fmtCHF(grandDiscount)}`;
+      // 2) Afficher le total général en haut
+      totalGlobalDiv.textContent = `Total général de toutes les ventes : ${fmtCHF(grandTotal)}`;
 
-
-      const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
+      // 3) Afficher chaque jour avec son total (CHF) ET son nombre de disques
+      const sortedDays = Object.keys(byDay).sort((a,b) => b.localeCompare(a)); // jours récents d'abord
 
       sortedDays.forEach(dayKey => {
         const dayBlock = document.createElement('div');
@@ -237,8 +234,8 @@
 
         const dayHeader = document.createElement('div');
         dayHeader.className = 'day-header';
-        const [y,m,d] = dayKey.split('-');
-        const niceDate = new Date(`${y}-${m}-${d}T00:00:00`);
+        const dateParts = dayKey.split('-');
+        const niceDate = new Date(`${dateParts[0]}-${dateParts[1]}-${dateParts[2]}T00:00:00`);
         const dateLabel = niceDate.toLocaleDateString('fr-CH', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
 
         dayHeader.innerHTML = `
@@ -247,14 +244,15 @@
         `;
         dayBlock.appendChild(dayHeader);
 
+        // lister les snapshots du jour (ordre antéchronologique)
         byDay[dayKey].items.sort((a, b) => new Date(b.snapshot.time) - new Date(a.snapshot.time));
 
-        byDay[dayKey].items.forEach(({ snapshot, gross, discount, tip, net, count }) => {
+        byDay[dayKey].items.forEach(({ snapshot, subtotal, count }) => {
           const snapshotDiv = document.createElement('div');
           snapshotDiv.className = 'snapshot';
 
           const date = new Date(snapshot.time);
-          const formattedDate = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const formattedDate = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // heure seulement
 
           snapshotDiv.innerHTML = `
             <h2>${formattedDate}</h2>
@@ -272,25 +270,20 @@
           table.appendChild(thead);
 
           const tbody = document.createElement('tbody');
+
           snapshot.entries.forEach(entry => {
             const price = parseFloat(entry.price) || 0;
             const row = document.createElement('tr');
             row.innerHTML = `<td>${entry.category}</td><td>${entry.style || ''}</td><td>${price.toFixed(2)}</td>`;
             tbody.appendChild(row);
           });
+
           table.appendChild(tbody);
           snapshotDiv.appendChild(table);
 
-          const breakdown = document.createElement('div');
-          breakdown.className = 'breakdown';
-          breakdown.innerHTML = `
-            Rabais: <strong>- ${fmtCHF(discount)}</strong><br>
-          `;
-          snapshotDiv.appendChild(breakdown);
-
           const totalEl = document.createElement('div');
           totalEl.className = 'total-per-snapshot';
-          totalEl.textContent = `Total NET: ${count} disques — ${fmtCHF(net)}`;
+          totalEl.textContent = `Total: ${count} disques — ${fmtCHF(subtotal)}`;
           snapshotDiv.appendChild(totalEl);
 
           dayBlock.appendChild(snapshotDiv);
@@ -312,7 +305,13 @@
     function generateFilename() {
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
-      return `vente_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.csv`;
+      const y = now.getFullYear();
+      const m = pad(now.getMonth() + 1);
+      const d = pad(now.getDate());
+      const hh = pad(now.getHours());
+      const mm = pad(now.getMinutes());
+      const ss = pad(now.getSeconds());
+      return `vente_${y}${m}${d}_${hh}${mm}${ss}.csv`;
     }
 
     function downloadCSV(filename = 'Ventes.csv') {
@@ -324,29 +323,26 @@
           return monthKey === monthFilter.value;
         });
       }
+
       if (filteredSnapshots.length === 0) return;
 
-      let csvContent = 'Time,Category,Style,Price (CHF),Discount (CHF),Tip (CHF),Net (CHF)\n';
-
+      let csvContent = 'Time,Category,Style,Price (CHF)\n';
       filteredSnapshots.forEach(snapshot => {
         const date = new Date(snapshot.time).toLocaleString('fr-CH');
-        const discount = Number(snapshot.discount) || 0;
-        const tip = Number(snapshot.tip) || 0;
-        const gross = snapshot.entries.reduce((s,e)=>s+(Number(e.price)||0),0);
-        const netTotal = Math.max(gross - discount + tip, 0);
-        const ratio = gross > 0 ? netTotal / gross : 0;
-
         snapshot.entries.forEach(entry => {
-          const price = Number(entry.price) || 0;
-          const net = price * ratio;
-          csvContent += `${date},"${entry.category}","${entry.style || ''}",${price.toFixed(2)},${discount.toFixed(2)},${tip.toFixed(2)},${net.toFixed(2)}\n`;
+          const category = `"${entry.category}"`;
+          const style = `"${entry.style || ''}"`;
+          const price = entry.price;
+          csvContent += `${date},${category},${style},${price}\n`;
         });
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
         const file = new File([blob], filename, { type: 'text/csv' });
-        navigator.share({ files: [file] }).catch(err => console.warn('Partage annulé ou non supporté :', err));
+        navigator.share({ files: [file] }).catch(err => {
+          console.warn('Partage annulé ou non supporté :', err);
+        });
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
