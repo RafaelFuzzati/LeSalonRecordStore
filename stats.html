@@ -122,11 +122,6 @@
       <div class="kpi-value" id="kpiDiscount">—</div>
       <div class="kpi-sub" id="kpiAvgDiscount">—</div>
     </div>
-    <div class="card">
-      <h3>Pourboires totaux</h3>
-      <div class="kpi-value" id="kpiTip">—</div>
-      <div class="kpi-sub" id="kpiAvgTip">—</div>
-    </div>
   </section>
 
   <section id="calendarSection" class="section card">
@@ -311,7 +306,6 @@
       els.kpiDiscount.textContent = CHF(sum.totalDiscount);
       els.kpiAvgDiscount.textContent = sum.totalCount ? `Rabais moyen / disque: ${CHF(sum.totalDiscount/sum.totalCount)}` : '—';
       els.kpiTip.textContent = CHF(sum.totalTip);
-      els.kpiAvgTip.textContent = sum.totalCount ? `Pourboire moyen / disque: ${CHF(sum.totalTip/sum.totalCount)}` : '—';
     }
 
     function renderCalendar(sum, mkey){
@@ -360,7 +354,7 @@
           box.innerHTML = `<div class="d">${day}</div><div class="v">0</div><div class="v">Rabais: 0</div><div class="v">Pourb.: 0</div>`;
         } else {
           box.className = `day lv${lv}`;
-          box.title = `${key} • ${info.count} disques — Net ${CHF(info.total)} | Rabais ${CHF(info.discount)} | Pourboire ${CHF(info.tip)}`;
+          box.title = `${key} • ${info.count} disques — Net ${CHF(info.total)} | Rabais ${CHF(info.discount)} | `;
           box.innerHTML = `
             <div class="d">${day}</div>
             <div class="v">${info.count} | ${CHF(info.total)}</div>
@@ -387,7 +381,7 @@
           }
           const wk = document.createElement("div");
           wk.className = "week-total";
-          wk.title = `Semaine • ${weekCount} disques — Net ${CHF(weekSum)} | Rabais ${CHF(weekDiscount)} | Pourboire ${CHF(weekTip)}`;
+          wk.title = `Semaine • ${weekCount} disques — Net ${CHF(weekSum)} | Rabais ${CHF(weekDiscount)}  `;
           wk.innerHTML = `
             <div>Total</div>
             <div class="v">${weekCount} | ${CHF(weekSum)}</div>
